@@ -1468,213 +1468,112 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(() => {
         const trackerId = trackerInput.value.trim();
         if (trackerId) fetchDroneData();
-    }, 10000);
+    }, 60000);
 
     async function fetchDroneData() {
-        const trackerId = trackerInput.value.trim();
-        if (!trackerId) {
-            showStatus('Please enter a Tracker ID', 'error');
-            return;
-        }
-
-        clearData();
-        showStatus('Fetching latest trajectory...', 'loading');
-
-        try {
-            // Ask server to sort + downsample @ 30s, and tell us the max gap (2 min)
-            const response = await fetch('/api/trajectory', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tracker_id: trackerId,
-                    interval_seconds: 30,
-                    max_gap_seconds: 120
-                })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Server error occurred');
-            }
-
-            const data = await response.json();
-            lastUpdateTime = new Date();
-            updateLastUpdatedTime();
-
-            // points already sorted & 30s-sampled from backend
-            pathPoints = (data.points || []).map(p => ({
-                Latitude: p.lat,
-                Longitude: p.lon,
-                Timestamp: p.timestamp
-            }));
-
-            fetchedImages = data.images || [];
-
-            if (pathPoints.length === 0 && fetchedImages.length === 0) {
-                handleEmptyDataResponse(trackerId);
-                return;
-            }
-
-            // For CSV we still might want raw telemetry; fallback to sampled if not available
-            fetchedData = pathPoints;
-
-            // Minimal drone info row (use first point if any)
-            displayDroneInfo(trackerId, { DroneUINNumber: '—', DroneCategory: '—', DroneApplication: '—' });
-
-            plotMapData(pathPoints, data.max_gap_seconds || 120);
-
-            displayImages(fetchedImages);
-            showStatus(`Loaded ${pathPoints.length} path points (30s interval) and ${fetchedImages.length} images`, 'success');
-        } catch (error) {
-            console.error('Error:', error);
-            showStatus(error.message, 'error');
-            showErrorOnMap(error.message);
-        }
+    const trackerId = trackerInput.value.trim();
+    if (!trackerId) {
+        showStatus('Please enter a Tracker ID', 'error');
+        return;
     }
 
-    function displayDroneInfo(trackerId, firstRecord = {}) {
-        droneInfoBody.innerHTML = '';
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${trackerId}</td>
-            <td>${firstRecord.DroneUINNumber || '—'}</td>
-            <td>${firstRecord.DroneCategory || '—'}</td>
-            <td>${firstRecord.DroneApplication || '—'}</td>
-        `;
-        droneInfoBody.appendChild(row);
+    clearData();
+    showStatus('Fetching latest trajectory...', 'loading');
+
+    try {
+        const response = await fetch('/api/trajectory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tracker_id: trackerId,
+                interval_seconds: 30,
+                max_gap_seconds: 120
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Server error occurred');
+        }
+
+        const data = await response.json();
+        lastUpdateTime = new Date();
+        updateLastUpdatedTime();
+
+        // Map API fields to frontend, with fallbacks
+        pathPoints = (data.points || []).map(p => ({
+            Latitude: p.lat,
+            Longitude: p.lon,
+            Timestamp: p.timestamp,
+            Altitude: p.altitude || 0,
+            DroneUINNumber: p.DroneUINNumber || "N/A",
+            DroneCategory: p.DroneCategory || "N/A",
+            DroneApplication: p.DroneApplication || "N/A"
+        }));
+
+        fetchedImages = data.images || [];
+        fetchedData = pathPoints; // for CSV export
+
+        // Display first row info in table
+        const firstPoint = pathPoints[0] || {};
+        displayDroneInfo(trackerId, firstPoint);
+
+        // Plot map & images
+        plotMapData(pathPoints);
+        displayImages(fetchedImages);
+
+        showStatus(`Loaded ${pathPoints.length} path points (30s interval) and ${fetchedImages.length} images`, 'success');
+
+    } catch (error) {
+        console.error('Error:', error);
+        showStatus(error.message, 'error');
+        showErrorOnMap(error.message);
     }
+}
 
-    // ---- Plotting (uses 30s-sampled points, splits on large gaps) ----
-    // function plotMapData(points, maxGapSeconds = 120) {
-    //     markersLayer.clearLayers();
-    //     polylineLayer.clearLayers();
+// Display first row of drone info in table
+function displayDroneInfo(trackerId, firstRecord = {}) {
+    droneInfoBody.innerHTML = '';
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>${trackerId}</td>
+        <td>${firstRecord.DroneUINNumber || 'N/A'}</td>
+        <td>${firstRecord.DroneCategory || 'N/A'}</td>
+        <td>${firstRecord.DroneApplication || 'N/A'}</td>
+    `;
+    droneInfoBody.appendChild(row);
+}
 
-    //     if (!points || points.length === 0) return;
-
-    //     // Ensure ascending
-    //     points = points.slice().sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
-
-    //     const maxGapMs = maxGapSeconds * 1000;
-
-    //     // Build segments split by large gaps
-    //     let segments = [];
-    //     let current = [];
-
-    //     for (let i = 0; i < points.length; i++) {
-    //         const p = points[i];
-    //         const lat = parseFloat(p.Latitude);
-    //         const lng = parseFloat(p.Longitude);
-    //         if (isNaN(lat) || isNaN(lng)) continue;
-
-    //         const ts = new Date(p.Timestamp);
-    //         if (current.length === 0) {
-    //             current.push([lat, lng, ts]);
-    //             continue;
-    //         }
-
-    //         const prevTs = current[current.length - 1][2];
-    //         if (ts - prevTs <= maxGapMs) {
-    //             current.push([lat, lng, ts]);
-    //         } else {
-    //             if (current.length > 1) segments.push(current.map(x => [x[0], x[1]]));
-    //             current = [[lat, lng, ts]];
-    //         }
-    //     }
-    //     if (current.length > 1) segments.push(current.map(x => [x[0], x[1]]));
-
-    //     // Draw segments
-    //     segments.forEach(coords => {
-    //         L.polyline(coords, {
-    //             color: 'blue',
-    //             weight: 4,
-    //             opacity: 0.9
-    //         }).addTo(polylineLayer);
-    //     });
-
-    //     // Markers (start=green pulse, end=red, mid=blue)
-    //     const allLatLngs = [];
-    //     points.forEach((p, idx) => {
-    //         const lat = parseFloat(p.Latitude);
-    //         const lng = parseFloat(p.Longitude);
-    //         if (isNaN(lat) || isNaN(lng)) return;
-    //         allLatLngs.push([lat, lng]);
-
-    //         let color = 'blue';
-    //         let pulse = false;
-    //         if (idx === 0) { color = 'green'; pulse = true; }
-    //         else if (idx === points.length - 1) { color = 'red'; }
-
-    //         L.marker([lat, lng], {
-    //             icon: createCustomIcon(color, pulse)
-    //         }).addTo(markersLayer).bindPopup(`
-    //             <div class="map-popup">
-    //                 <h4>${trackerInput.value}</h4>
-    //                 <p><strong>Time:</strong> ${formatTimestamp(p.Timestamp)}</p>
-    //                 <p><strong>Location:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
-    //             </div>
-    //         `);
-    //     });
-
-    //     // Fit bounds
-    //     if (allLatLngs.length) {
-    //         const group = new L.featureGroup(allLatLngs.map(ll => L.marker(ll)));
-    //         map.fitBounds(group.getBounds(), { padding: [40, 40] });
-    //     }
-    // }
-
-    // CODE FOR TEST
-    function plotMapData(points) {
+// Update map popup to show the 3 fields
+function plotMapData(points) {
     markersLayer.clearLayers();
     polylineLayer.clearLayers();
 
     if (!points || points.length === 0) return;
 
-    // Ensure sorted by timestamp
-    points = points.slice().sort((a, b) => new Date(a.Timestamp) - new Date(b.Timestamp));
-
-    // Build path
     const coords = points.map(p => [parseFloat(p.Latitude), parseFloat(p.Longitude)]);
+    const polyline = L.polyline(coords, { color: 'blue', weight: 4, opacity: 0.9 }).addTo(polylineLayer);
 
-    // Draw continuous polyline
-    const polyline = L.polyline(coords, {
-        color: 'blue',
-        weight: 4,
-        opacity: 0.9
-    }).addTo(polylineLayer);
-
-    // Add Start Marker (green pulse)
-    const start = coords[0];
-    L.marker(start, { icon: createCustomIcon('green', true) })
-        .addTo(markersLayer)
-        .bindPopup(`<b>Start Point</b><br>Time: ${formatTimestamp(points[0].Timestamp)}`);
-
-    // Add End Marker (red)
-    const end = coords[coords.length - 1];
-    L.marker(end, { icon: createCustomIcon('red') })
-        .addTo(markersLayer)
-        .bindPopup(`<b>End Point</b><br>Time: ${formatTimestamp(points[points.length - 1].Timestamp)}`);
-
-    // Add Intermediate Markers (optional – blue)
-    for (let i = 1; i < points.length - 1; i++) {
-        const p = points[i];
+    points.forEach((p, i) => {
         const lat = parseFloat(p.Latitude);
         const lng = parseFloat(p.Longitude);
-
-        L.marker([lat, lng], { icon: createCustomIcon('blue') })
+        const iconColor = (i === 0) ? 'green' : (i === points.length - 1) ? 'red' : 'blue';
+        L.marker([lat, lng], { icon: createCustomIcon(iconColor, i === 0) })
             .addTo(markersLayer)
             .bindPopup(`
                 <div class="map-popup">
-                    <h4>${trackerInput.value}</h4>
+                    <h4>Tracker ID: ${trackerInput.value}</h4>
                     <p><strong>Time:</strong> ${formatTimestamp(p.Timestamp)}</p>
                     <p><strong>Location:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+                    <p><strong>Altitude:</strong> ${p.Altitude.toFixed(2)} m</p>
+                    <p><strong>UIN:</strong> ${p.DroneUINNumber || 'N/A'}</p>
+                    <p><strong>Category:</strong> ${p.DroneCategory || 'N/A'}</p>
+                    <p><strong>Application:</strong> ${p.DroneApplication || 'N/A'}</p>
                 </div>
             `);
-    }
+    });
 
-    // Fit map to path
-    if (coords.length) {
-        map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
-    }
+    if (coords.length) map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
 }
 
 
