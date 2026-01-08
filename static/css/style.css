@@ -16,7 +16,7 @@ header {
 
 /* Logo in Header */
 header img:first-child {
-  height: 71px;                                        /*logo height*/
+  height: 52px;                                        /*logo height*/
   margin-right: 20px;
 }
 

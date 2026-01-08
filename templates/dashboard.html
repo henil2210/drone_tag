@@ -9974,6 +9974,42 @@ document.addEventListener('DOMContentLoaded', function() {
   border: 2px solid #e5e7eb;
 }
 
+/* user profile at right corner */
+.user-container {
+  position: absolute;
+  top: 15px;
+  right: 25px;
+}
+
+.profile {
+  width: 62px;
+  height: 45px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  background: white;
+  border-radius: 6px;
+  padding: 8px 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 2000;
+}
+
+.dropdown-menu a {
+  display: block;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #333;
+}
+
+.dropdown-menu a:hover {
+  background: #f1f1f1;
+}
+
 
 
     /* ================= SIDEBAR ================= */
@@ -10779,7 +10815,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <button class="mobile-menu-toggle" id="mobileMenuToggle">
   <i data-lucide="menu"></i>
 </button>
-
+\
+<!-- ================= HEADER ================= -->
 <header>
   <div class="header-left">
     <img src="{{ url_for('static', filename='images/logo.svg') }}" class="logo">
@@ -10791,6 +10828,22 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 
   <div class="header-right"></div>
+
+  <div class="user-container dropdown">
+  <img src="{{ url_for('static', filename='images/profile.png') }}" 
+       alt="Profile" 
+       class="profile dropdown-toggle" 
+       id="dropdownMenu"
+       title="Your Account">
+  <div class="dropdown-menu" id="dropdownContent">
+      <a href="/account">Your Account</a>
+      <a href="/settings">Settings</a>
+      <a href="/support">Support</a>
+      <a href="/help">Help</a>
+      <a href="/logout">Logout</a>
+  </div>
+</div>
+
 </header>
 
 
@@ -11038,6 +11091,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 lucide.createIcons();
+
+
+  /* =================  user profile seeting at header corner ================= */
+document.addEventListener('DOMContentLoaded', function () {
+  const profileIcon = document.querySelector('.dropdown-toggle');
+  const dropdownMenu = document.getElementById('dropdownContent');
+
+  profileIcon.addEventListener('click', function (e) {
+    e.preventDefault();
+    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
+  });
+
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('.dropdown')) {
+      dropdownMenu.style.display = 'none';
+    }
+  });
+});
+
+
 
 /* ================= MOBILE MENU ================= */
 const mobileMenuToggle = document.getElementById('mobileMenuToggle');
