@@ -1689,7 +1689,7 @@ def logout():
 @app.route('/index')
 @login_required
 def index():
-    return render_template('index.html')
+    return render_template('dashboard.html')
 
 
 @app.route('/dashboard')
@@ -1737,15 +1737,197 @@ def settings_page():
 # -----------------------------
 # API: Fetch Drone Data from AWS
 # -----------------------------
-@app.route('/api/data', methods=['POST'])
+# @app.route('/api/data', methods=['POST'])
+# @login_required
+# def get_data():
+#     try:
+#         payload = request.get_json(force=True)
+#         tracker_id = (payload.get('tracker_id') or '').strip()
+#         if not tracker_id:
+#             return jsonify({"error": "Tracker ID is required"}), 400
+
+#         api_response = requests.post(
+#             "https://7mmfy9xgk9.execute-api.ap-south-1.amazonaws.com/json/data",
+#             json={"TrackerId": tracker_id},
+#             timeout=10
+#         )
+#         api_response.raise_for_status()
+#         data = api_response.json()
+
+#         body = data.get('body')
+#         if isinstance(body, str):
+#             body = json.loads(body)
+
+#         telemetry = body.get('Telemetry', []) or []
+#         images = body.get('Images', []) or []
+
+#         drone_info = body.get('DroneInfo', {})
+#         uin = drone_info.get('UIN') or "N/A"
+#         category = drone_info.get('Category') or "N/A"
+#         application = drone_info.get('Application') or "N/A"
+#         default_altitude = float(drone_info.get('Altitude') or 0)
+
+#         # Correct Altitude & drone info
+#         for t in telemetry:
+#             # Fetch altitude properly from AWS payload
+#             altitude_val = t.get('Altitude')
+#             if altitude_val is None or altitude_val == '' or float(altitude_val) == 0:
+#                 altitude_val = default_altitude
+#             t['Altitude'] = float(altitude_val)
+
+#             t['DroneUINNumber'] = t.get('DroneUINNumber') or uin
+#             t['DroneCategory'] = t.get('DroneCategory') or category
+#             t['DroneApplication'] = t.get('DroneApplication') or application
+
+#         return jsonify({
+#             "TrackerId": tracker_id,
+#             "Telemetry": telemetry,
+#             "Images": images,
+#             "UIN": uin,
+#             "Category": category,
+#             "Application": application
+#         })
+
+#     except requests.RequestException as e:
+#         return jsonify({"error": f"API request failed: {str(e)}"}), 502
+#     except Exception as e:
+#         logging.exception("Error in /api/data")
+#         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
+# # -----------------------------
+# # API: Trajectory (Downsample + Time Window + UIN info + Correct Altitude)
+# # -----------------------------
+# @app.route('/api/trajectory', methods=['POST'])
+# @login_required
+# def get_trajectory():
+#     try:
+#         payload = request.get_json(force=True)
+#         tracker_id = (payload.get('tracker_id') or '').strip()
+#         if not tracker_id:
+#             return jsonify({"error": "Tracker ID is required"}), 400
+
+#         start_time = payload.get('start_time')
+#         end_time = payload.get('end_time')
+#         interval_seconds = int(payload.get('interval_seconds') or 30)
+#         max_gap_seconds = int(payload.get('max_gap_seconds') or 120)
+
+#         # Fetch data from AWS
+#         api_response = requests.post(
+#             "https://7mmfy9xgk9.execute-api.ap-south-1.amazonaws.com/json/data",
+#             json={"TrackerId": tracker_id},
+#             timeout=10
+#         )
+#         api_response.raise_for_status()
+#         data = api_response.json()
+
+#         body = data.get('body')
+#         if isinstance(body, str):
+#             body = json.loads(body)
+
+#         telemetry = body.get('Telemetry', []) or []
+#         images = body.get('Images', []) or []
+
+#         drone_info = body.get('DroneInfo', {})
+#         uin = drone_info.get('UIN') or "N/A"
+#         category = drone_info.get('Category') or "N/A"
+#         application = drone_info.get('Application') or "N/A"
+#         default_altitude = float(drone_info.get('Altitude') or 0)
+
+#         def parse_ts(ts_str):
+#             if not ts_str:
+#                 return None
+#             try:
+#                 return parse_datetime(ts_str)
+#             except Exception:
+#                 try:
+#                     return datetime.strptime(ts_str, "%d-%m-%Y %H:%M:%S")
+#                 except Exception:
+#                     return None
+
+#         start_dt = parse_datetime(start_time) if start_time else None
+#         end_dt = parse_datetime(end_time) if end_time else None
+
+#         norm = []
+#         for row in telemetry:
+#             ts = parse_ts(row.get('Timestamp'))
+#             if not ts:
+#                 continue
+#             if start_dt and ts < start_dt:
+#                 continue
+#             if end_dt and ts > end_dt:
+#                 continue
+#             try:
+#                 lat = float(row.get('Latitude'))
+#                 lon = float(row.get('Longitude'))
+#             except (TypeError, ValueError):
+#                 continue
+
+#             # Correct Altitude
+#             altitude_val = row.get('Altitude')
+#             if altitude_val is None or altitude_val == '' or float(altitude_val) == 0:
+#                 altitude_val = default_altitude
+#             altitude_val = float(altitude_val)
+
+#             norm.append({
+#                 "lat": lat,
+#                 "lon": lon,
+#                 "timestamp": ts,
+#                 "altitude": altitude_val,
+#                 "DroneUINNumber": row.get('DroneUINNumber') or uin,
+#                 "DroneCategory": row.get('DroneCategory') or category,
+#                 "DroneApplication": row.get('DroneApplication') or application
+#             })
+
+#         # Sort by time
+#         norm.sort(key=lambda x: x["timestamp"])
+
+#         # Downsample
+#         sampled = []
+#         last_kept = None
+#         for p in norm:
+#             if last_kept is None or (p["timestamp"] - last_kept) >= timedelta(seconds=interval_seconds):
+#                 sampled.append(p)
+#                 last_kept = p["timestamp"]
+
+#         points = [{
+#             "lat": p["lat"],
+#             "lon": p["lon"],
+#             "altitude": p["altitude"],
+#             "timestamp": p["timestamp"].isoformat(),
+#             "DroneUINNumber": p["DroneUINNumber"],
+#             "DroneCategory": p["DroneCategory"],
+#             "DroneApplication": p["DroneApplication"]
+#         } for p in sampled]
+
+#         return jsonify({
+#             "tracker_id": tracker_id,
+#             "points": points,
+#             "images": images,
+#             "interval_seconds": interval_seconds,
+#             "max_gap_seconds": max_gap_seconds,
+#             "UIN": uin,
+#             "Category": category,
+#             "Application": application
+#         })
+
+#     except Exception as e:
+#         logging.exception("Trajectory API failed")
+#         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
+
+# -----------------------------
+# API: Get ALL Historical Data for Tracker (No Downsampling)
+# -----------------------------
+@app.route('/api/trajectory/all', methods=['POST'])
 @login_required
-def get_data():
+def get_all_trajectory():
     try:
         payload = request.get_json(force=True)
         tracker_id = (payload.get('tracker_id') or '').strip()
         if not tracker_id:
             return jsonify({"error": "Tracker ID is required"}), 400
 
+        # Fetch data from AWS
         api_response = requests.post(
             "https://7mmfy9xgk9.execute-api.ap-south-1.amazonaws.com/json/data",
             json={"TrackerId": tracker_id},
@@ -1767,35 +1949,319 @@ def get_data():
         application = drone_info.get('Application') or "N/A"
         default_altitude = float(drone_info.get('Altitude') or 0)
 
-        # Correct Altitude & drone info
-        for t in telemetry:
-            # Fetch altitude properly from AWS payload
-            altitude_val = t.get('Altitude')
+        def parse_ts(ts_str):
+            if not ts_str:
+                return None
+            try:
+                return parse_datetime(ts_str)
+            except Exception:
+                try:
+                    return datetime.strptime(ts_str, "%d-%m-%Y %H:%M:%S")
+                except Exception:
+                    return None
+
+        # Process ALL telemetry data without downsampling
+        points = []
+        for row in telemetry:
+            ts = parse_ts(row.get('Timestamp'))
+            if not ts:
+                continue
+            try:
+                lat = float(row.get('Latitude'))
+                lon = float(row.get('Longitude'))
+            except (TypeError, ValueError):
+                continue
+
+            # Correct Altitude
+            altitude_val = row.get('Altitude')
             if altitude_val is None or altitude_val == '' or float(altitude_val) == 0:
                 altitude_val = default_altitude
-            t['Altitude'] = float(altitude_val)
+            altitude_val = float(altitude_val)
 
-            t['DroneUINNumber'] = t.get('DroneUINNumber') or uin
-            t['DroneCategory'] = t.get('DroneCategory') or category
-            t['DroneApplication'] = t.get('DroneApplication') or application
+            # Extract additional fields if available
+            drone_uin = row.get('DroneUINNumber') or uin
+            drone_category = row.get('DroneCategory') or category
+            drone_application = row.get('DroneApplication') or application
+            
+            # # Get speed if available (from velocity data)
+            # speed = 0
+            # if 'Velocity' in row and row['Velocity']:
+            #     try:
+            #         # Assuming velocity is in m/s, convert to km/h
+            #         speed = float(row['Velocity']) * 3.6
+            #     except:
+            #         pass
+            
+            # # Get heading if available (from direction data)
+            # heading = 0
+            # if 'Direction' in row and row['Direction']:
+            #     try:
+            #         heading = float(row['Direction'])
+            #     except:
+            #         pass
+            
+            # # Battery and signal strength if available
+            # battery = row.get('Battery') or 'N/A'
+            # signal_strength = row.get('SignalStrength') or 'N/A'
+
+            # points.append({
+            #     "lat": lat,
+            #     "lon": lon,
+            #     "altitude": altitude_val,
+            #     "timestamp": ts.isoformat(),
+            #     "uin_no": drone_uin,
+            #     "category": drone_category,
+            #     "application": drone_application,
+            #     "speed": speed,
+            #     "heading": heading,
+            #     "battery": battery,
+            #     "signal_strength": signal_strength
+            # })
+
+        # Sort by timestamp (ascending - oldest first)
+        points.sort(key=lambda x: x["timestamp"])
 
         return jsonify({
-            "TrackerId": tracker_id,
-            "Telemetry": telemetry,
-            "Images": images,
+            "tracker_id": tracker_id,
+            "points": points,
+            "images": images,
             "UIN": uin,
             "Category": category,
-            "Application": application
+            "Application": application,
+            "total_points": len(points),
+            "first_timestamp": points[0]["timestamp"] if points else None,
+            "last_timestamp": points[-1]["timestamp"] if points else None
         })
 
-    except requests.RequestException as e:
-        return jsonify({"error": f"API request failed: {str(e)}"}), 502
     except Exception as e:
-        logging.exception("Error in /api/data")
+        logging.exception("All Trajectory API failed")
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
+
 # -----------------------------
-# API: Trajectory (Downsample + Time Window + UIN info + Correct Altitude)
+# API: Get Latest Tracker Data (for real-time updates)
+# -----------------------------
+@app.route('/api/trajectory/latest', methods=['POST'])
+@login_required
+def get_latest_trajectory():
+    try:
+        payload = request.get_json(force=True)
+        tracker_id = (payload.get('tracker_id') or '').strip()
+        last_timestamp = payload.get('last_timestamp')
+        
+        if not tracker_id:
+            return jsonify({"error": "Tracker ID is required"}), 400
+
+        # Fetch data from AWS
+        api_response = requests.post(
+            "https://7mmfy9xgk9.execute-api.ap-south-1.amazonaws.com/json/data",
+            json={"TrackerId": tracker_id},
+            timeout=10
+        )
+        api_response.raise_for_status()
+        data = api_response.json()
+
+        body = data.get('body')
+        if isinstance(body, str):
+            body = json.loads(body)
+
+        telemetry = body.get('Telemetry', []) or []
+        
+        drone_info = body.get('DroneInfo', {})
+        uin = drone_info.get('UIN') or "N/A"
+        category = drone_info.get('Category') or "N/A"
+        application = drone_info.get('Application') or "N/A"
+        default_altitude = float(drone_info.get('Altitude') or 0)
+
+        def parse_ts(ts_str):
+            if not ts_str:
+                return None
+            try:
+                return parse_datetime(ts_str)
+            except Exception:
+                try:
+                    return datetime.strptime(ts_str, "%d-%m-%Y %H:%M:%S")
+                except Exception:
+                    return None
+
+        # Get only points after last_timestamp
+        new_points = []
+        for row in telemetry:
+            ts = parse_ts(row.get('Timestamp'))
+            if not ts:
+                continue
+                
+            # If we have last_timestamp, only get newer points
+            if last_timestamp:
+                point_time = ts.isoformat()
+                if point_time <= last_timestamp:
+                    continue
+            
+            try:
+                lat = float(row.get('Latitude'))
+                lon = float(row.get('Longitude'))
+            except (TypeError, ValueError):
+                continue
+
+            # Correct Altitude
+            altitude_val = row.get('Altitude')
+            if altitude_val is None or altitude_val == '' or float(altitude_val) == 0:
+                altitude_val = default_altitude
+            altitude_val = float(altitude_val)
+
+            new_points.append({
+                "lat": lat,
+                "lon": lon,
+                "altitude": altitude_val,
+                "timestamp": ts.isoformat(),
+                "uin_no": row.get('DroneUINNumber') or uin,
+                "category": row.get('DroneCategory') or category,
+                "application": row.get('DroneApplication') or application
+            })
+
+        # Sort by timestamp (descending - newest first)
+        new_points.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        # Take only the most recent points (limit to 10)
+        latest_points = new_points[:10]
+
+        return jsonify({
+            "tracker_id": tracker_id,
+            "points": latest_points,
+            "new_points_count": len(latest_points),
+            "last_timestamp": latest_points[0]["timestamp"] if latest_points else None
+        })
+
+    except Exception as e:
+        logging.exception("Latest Trajectory API failed")
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
+
+# -----------------------------
+# API: Get Trajectory with Extended Fields (for detailed view)
+# -----------------------------
+@app.route('/api/trajectory/detailed', methods=['POST'])
+@login_required
+def get_detailed_trajectory():
+    try:
+        payload = request.get_json(force=True)
+        tracker_id = (payload.get('tracker_id') or '').strip()
+        
+        if not tracker_id:
+            return jsonify({"error": "Tracker ID is required"}), 400
+
+        start_time = payload.get('start_time')
+        end_time = payload.get('end_time')
+        limit = int(payload.get('limit') or 1000)  # Default limit to 1000 points
+
+        # Fetch data from AWS
+        api_response = requests.post(
+            "https://7mmfy9xgk9.execute-api.ap-south-1.amazonaws.com/json/data",
+            json={"TrackerId": tracker_id},
+            timeout=10
+        )
+        api_response.raise_for_status()
+        data = api_response.json()
+
+        body = data.get('body')
+        if isinstance(body, str):
+            body = json.loads(body)
+
+        telemetry = body.get('Telemetry', []) or []
+        images = body.get('Images', []) or []
+
+        drone_info = body.get('DroneInfo', {})
+        uin = drone_info.get('UIN') or "N/A"
+        category = drone_info.get('Category') or "N/A"
+        application = drone_info.get('Application') or "N/A"
+        default_altitude = float(drone_info.get('Altitude') or 0)
+
+        def parse_ts(ts_str):
+            if not ts_str:
+                return None
+            try:
+                return parse_datetime(ts_str)
+            except Exception:
+                try:
+                    return datetime.strptime(ts_str, "%d-%m-%Y %H:%M:%S")
+                except Exception:
+                    return None
+
+        start_dt = parse_datetime(start_time) if start_time else None
+        end_dt = parse_datetime(end_time) if end_time else None
+
+        # Process telemetry data
+        points = []
+        for row in telemetry:
+            ts = parse_ts(row.get('Timestamp'))
+            if not ts:
+                continue
+            if start_dt and ts < start_dt:
+                continue
+            if end_dt and ts > end_dt:
+                continue
+            try:
+                lat = float(row.get('Latitude'))
+                lon = float(row.get('Longitude'))
+            except (TypeError, ValueError):
+                continue
+
+            # Correct Altitude
+            altitude_val = row.get('Altitude')
+            if altitude_val is None or altitude_val == '' or float(altitude_val) == 0:
+                altitude_val = default_altitude
+            altitude_val = float(altitude_val)
+
+            # Extract all available fields
+            point_data = {
+                "lat": lat,
+                "lon": lon,
+                "altitude": altitude_val,
+                "timestamp": ts.isoformat(),
+                "uin_no": row.get('DroneUINNumber') or uin,
+                "category": row.get('DroneCategory') or category,
+                "application": row.get('DroneApplication') or application
+            }
+            
+            # # Add any additional fields that might be present
+            # additional_fields = ['Speed', 'Velocity', 'Direction', 'Heading', 
+            #                    'Battery', 'SignalStrength', 'Temperature',
+            #                    'Humidity', 'Pressure', 'Satellites']
+            
+            # for field in additional_fields:
+            #     if field in row and row[field] not in [None, '']:
+            #         try:
+            #             point_data[field.lower()] = float(row[field])
+            #         except:
+            #             point_data[field.lower()] = row[field]
+
+            # points.append(point_data)
+
+        # Sort by timestamp (ascending)
+        points.sort(key=lambda x: x["timestamp"])
+        
+        # Apply limit
+        if len(points) > limit:
+            points = points[:limit]
+
+        return jsonify({
+            "tracker_id": tracker_id,
+            "points": points,
+            "images": images,
+            "UIN": uin,
+            "Category": category,
+            "Application": application,
+            "total_points": len(points),
+            "limit_applied": limit
+        })
+
+    except Exception as e:
+        logging.exception("Detailed Trajectory API failed")
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
+
+
+# -----------------------------
+# Modified Original Trajectory Endpoint (for backward compatibility)
 # -----------------------------
 @app.route('/api/trajectory', methods=['POST'])
 @login_required
@@ -1810,6 +2276,9 @@ def get_trajectory():
         end_time = payload.get('end_time')
         interval_seconds = int(payload.get('interval_seconds') or 30)
         max_gap_seconds = int(payload.get('max_gap_seconds') or 120)
+        
+        # Check if client wants all data (interval_seconds = 0)
+        get_all_data = (interval_seconds == 0)
 
         # Fetch data from AWS
         api_response = requests.post(
@@ -1881,22 +2350,27 @@ def get_trajectory():
         # Sort by time
         norm.sort(key=lambda x: x["timestamp"])
 
-        # Downsample
-        sampled = []
-        last_kept = None
-        for p in norm:
-            if last_kept is None or (p["timestamp"] - last_kept) >= timedelta(seconds=interval_seconds):
-                sampled.append(p)
-                last_kept = p["timestamp"]
+        # Check if we want all data (no downsampling)
+        if get_all_data:
+            # Return all points without downsampling
+            sampled = norm
+        else:
+            # Downsample with interval
+            sampled = []
+            last_kept = None
+            for p in norm:
+                if last_kept is None or (p["timestamp"] - last_kept) >= timedelta(seconds=interval_seconds):
+                    sampled.append(p)
+                    last_kept = p["timestamp"]
 
         points = [{
             "lat": p["lat"],
             "lon": p["lon"],
             "altitude": p["altitude"],
             "timestamp": p["timestamp"].isoformat(),
-            "DroneUINNumber": p["DroneUINNumber"],
-            "DroneCategory": p["DroneCategory"],
-            "DroneApplication": p["DroneApplication"]
+            "uin_no": p["DroneUINNumber"],
+            "category": p["DroneCategory"],
+            "application": p["DroneApplication"]
         } for p in sampled]
 
         return jsonify({
@@ -1907,7 +2381,8 @@ def get_trajectory():
             "max_gap_seconds": max_gap_seconds,
             "UIN": uin,
             "Category": category,
-            "Application": application
+            "Application": application,
+            "downsampling_applied": not get_all_data
         })
 
     except Exception as e:
@@ -1996,109 +2471,111 @@ def fetch_drone_data():
     return jsonify(output)
 
 
+
 # -----------------------------
-# SENSOR PROXY - FIXED VERSION
+# GET ALL HISTORICAL SENSOR DATA
 # -----------------------------
-# -----------------------------
-# SENSOR PROXY - SIMPLIFIED VERSION
-# -----------------------------
-@app.route('/api/sensor_proxy/<sensor_id>')
+@app.route('/api/sensor/all', methods=['POST'])
 @login_required
-def sensor_proxy(sensor_id):
+def get_all_sensor_data():
     """
-    Simple proxy for sensor data API
+    Get ALL historical sensor data for a specific sensor ID
     """
     try:
-        # For now, let's return test data directly
-        # Once we confirm this works, we can add the AWS API call back
+        data = request.get_json()
+        sensor_id = data.get('sensor_id')
         
-        logging.info(f"Sensor proxy called with sensor_id: {sensor_id}")
+        if not sensor_id:
+            return jsonify({"error": "sensor_id is required"}), 400
         
-        # Return test data immediately (bypass AWS API for now)
-        test_data = create_test_sensor_data(sensor_id)
-        logging.info(f"Returning test data: {test_data}")
+        logging.info(f"Fetching ALL historical data for sensor: {sensor_id}")
         
-        # Return as array
-        return jsonify([test_data])
+        # Format sensor ID as 3 digits
+        sensor_id_str = str(sensor_id).zfill(3)
+        
+        # For now, create multiple test data points with different timestamps
+        # In production, replace with actual database query
+        from datetime import datetime, timedelta
+        import random
+        
+        all_sensor_data = []
+        
+        # Create 20 historical data points with different timestamps
+        for i in range(20):
+            # Create timestamp from 30 days ago to now
+            days_ago = random.randint(0, 30)
+            hours_ago = random.randint(0, 23)
+            minutes_ago = random.randint(0, 59)
+            
+            timestamp = datetime.now() - timedelta(days=days_ago, hours=hours_ago, minutes=minutes_ago)
+            
+            # Create realistic variations in sensor readings
+            base_lat = 23.0225
+            base_lon = 72.5714
+            
+            # Add small random variations to location
+            lat_variation = (random.random() - 0.5) * 0.01  # ±0.005 degrees
+            lon_variation = (random.random() - 0.5) * 0.01  # ±0.005 degrees
+            
+            sensor_data = {
+                "SensorId": sensor_id_str,
+                "Timestamp": timestamp.isoformat(),
+                "Latitude": round(base_lat + lat_variation, 6),
+                "Longitude": round(base_lon + lon_variation, 6),
+                "Moisture": round(random.uniform(20, 80), 2),
+                "Temperature": round(random.uniform(20, 35), 2),
+                "EC": round(random.uniform(1, 4), 2),
+                "PHValue": round(random.uniform(6.0, 8.0), 2),
+                "Nitrogen": round(random.uniform(10, 50), 2),
+                "Phosphorous": round(random.uniform(5, 40), 2),
+                "Potassium": round(random.uniform(15, 45), 2),
+                "SatelliteFix": random.choice(["GPS", "GLONASS", "Galileo", "GPS+GLONASS"]),
+                "Id": f"{sensor_id_str}_{i:03d}",
+                "Battery": round(random.uniform(3.5, 4.2), 2) if i % 2 == 0 else None,
+                "SignalStrength": random.randint(1, 5) if i % 3 == 0 else None
+            }
+            
+            all_sensor_data.append(sensor_data)
+        
+        # Sort by timestamp (oldest first)
+        all_sensor_data.sort(key=lambda x: x["Timestamp"])
+        
+        return jsonify({
+            "sensor_id": sensor_id_str,
+            "total_points": len(all_sensor_data),
+            "points": all_sensor_data
+        })
         
     except Exception as e:
-        logging.exception(f"Error in sensor_proxy: {e}")
-        # Return test data even on error
-        return jsonify([create_test_sensor_data(sensor_id)])
-
-
-def create_test_sensor_data(sensor_id):
-    """
-    Create test sensor data
-    """
-    import random
-    from datetime import datetime
-    
-    # Format sensor ID as 3 digits
-    sensor_id_str = str(sensor_id).zfill(3)
-    
-    return {
-        "SensorId": sensor_id_str,
-        "Timestamp": datetime.now().isoformat(),
-        "Latitude": round(23.0225 + (random.random() - 0.5) * 0.01, 6),
-        "Longitude": round(72.5714 + (random.random() - 0.5) * 0.01, 6),
-        "Moisture": round(random.uniform(20, 80), 2),
-        "Temperature": round(random.uniform(20, 35), 2),
-        "EC": round(random.uniform(1, 4), 2),
-        "PHValue": round(random.uniform(6.0, 8.0), 2),
-        "Nitrogen": round(random.uniform(10, 50), 2),
-        "Phosphorous": round(random.uniform(5, 40), 2),
-        "Potassium": round(random.uniform(15, 45), 2),
-        "SatelliteFix": random.choice(["GPS", "GLONASS", "Galileo"])
-    }
-
-# -----------------------------
-# Test endpoint to check sensor API
-# -----------------------------
-@app.route('/api/sensor_test/<sensor_id>')
-@login_required
-def sensor_test(sensor_id):
-    """
-    Test endpoint to debug sensor API issues
-    """
-    import json as json_module
-    
-    api_url = 'https://pg2y9zc74l.execute-api.ap-south-1.amazonaws.com/data/json'
-    
-    try:
-        # Try direct call
-        response = requests.get(api_url, timeout=10)
-        
-        result = {
-            "sensor_id": sensor_id,
-            "status_code": response.status_code,
-            "headers": dict(response.headers),
-            "raw_response": response.text[:1000]  # First 1000 chars
-        }
-        
-        try:
-            data = response.json()
-            result["json_data"] = data if isinstance(data, list) else [data]
-            result["record_count"] = len(result["json_data"])
-            
-            if result["json_data"]:
-                result["first_record_keys"] = list(result["json_data"][0].keys())
-                # Find sensor IDs
-                sensor_ids = []
-                for item in result["json_data"]:
-                    for key in ['SensorId', 'sensorId', 'SensorID', 'sensor_id']:
-                        if key in item:
-                            sensor_ids.append(f"{key}: {item[key]}")
-                result["available_sensor_ids"] = list(set(sensor_ids))[:10]  # First 10 unique
-        except:
-            result["json_parse_error"] = True
-            
-        return jsonify(result)
-        
-    except Exception as e:
+        logging.exception(f"Error in get_all_sensor_data: {e}")
         return jsonify({"error": str(e)}), 500
 
 
+# -----------------------------
+# GET SENSOR DATA WITH RANGE (Optional)
+# -----------------------------
+@app.route('/api/sensor/range', methods=['POST'])
+@login_required
+def get_sensor_data_range():
+    """
+    Get sensor data within a specific time range
+    """
+    try:
+        data = request.get_json()
+        sensor_id = data.get('sensor_id')
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        
+        if not sensor_id:
+            return jsonify({"error": "sensor_id is required"}), 400
+        
+        # In production, query database with date range
+        # For now, return all data
+        return get_all_sensor_data()
+        
+    except Exception as e:
+        logging.exception(f"Error in get_sensor_data_range: {e}")
+        return jsonify({"error": str(e)}), 500
 # -----------------------------
 # Run App
 # -----------------------------
@@ -2106,3 +2583,5 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
+# if __name__ == "__main__":
+#      app.run(host="0.0.0.0", port=5000, debug=True)
