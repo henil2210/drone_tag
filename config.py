@@ -29,7 +29,7 @@ class Config:
 
     encoded_password = quote_plus(DB_PASSWORD)
 
-    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:Harvi%4057@localhost:5432/Drone-Tag'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:Abhyuday101@drone-tag.cl4k2w6ss4tt.ap-south-1.rds.amazonaws.com:5432/postgres'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.urandom(24)
