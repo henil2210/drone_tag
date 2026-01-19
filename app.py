@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # Guest mode configuration
 GUEST_MODE_ENABLED = True
-GUEST_TRACKERS = ['2001', '2002', '2003', '2004', '2005']
+GUEST_TRACKERS = ['3001', '3002', '3003', '3004', '3005']
 GUEST_GROUP_NAME = "Group 1"
 
 # -----------------------------
