@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -927,7 +925,7 @@
 <button class="mobile-menu-toggle" id="mobileMenuToggle">
   <i data-lucide="menu"></i>
 </button>
-\
+
 <!-- ================= HEADER ================= -->
 <header>
   <div class="header-left">
@@ -936,15 +934,15 @@
 
   <div class="header-center">
     <span class="site-name">DRONE TAG</span>
-    <img src="/static/images/drone.png" class="Drone-photo">
+    <img src="/static/images/Drone.png" class="Drone-photo">
   </div>
 
   <div class="header-right"></div>
 
   <div class="user-container dropdown">
-  <img src="{{ url_for('static', filename='images/profile.png') }}" 
-       alt="Profile" 
-       class="profile dropdown-toggle" 
+  <img src="{{ url_for('static', filename='images/profile.png') }}"
+       alt="Profile"
+       class="profile dropdown-toggle"
        id="dropdownMenu"
        title="Your Account">
   <div class="dropdown-menu" id="dropdownContent">
@@ -1111,16 +1109,16 @@
       <span>Select Group</span>
       <i data-lucide="chevron-down" class="chevron" id="realtimeGroupChevron"></i>
     </div>
-    
+   
     <div class="tracker-dropdown collapsible" id="realtimeGroupList"></div>
 
     <div id="trackerParametersSection" style="display: none;">
       <div style="margin: 15px 0 10px 0; font-weight: 600; color: #374151;">
         Selected Tracker: <span id="selectedTrackerId">-</span>
       </div>
-      
+     
       <div id="parametersCheckboxes" class="tracker-dropdown collapsible" style="max-height: 200px;"></div>
-      
+     
       <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
         <button id="saveParametersBtn" style="width: 100%; padding: 8px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer;">
           Save Parameters
@@ -1134,11 +1132,11 @@
 <main>
   <div id="status-message"></div>
   <div class="last-updated"></div>
-  
+ 
   <div class="map-container">
     <div id="map"></div>
   </div>
-  
+ 
  <!-- ================= SENSOR DATA TABLE PANEL ================= -->
 <div id="sensorTablePanel" class="minimized">
   <div id="sensorTablePanelHeader">
@@ -1171,7 +1169,7 @@
     </table>
   </div>
 </div>
-  
+ 
   <!-- ================= REALTIME DATA TABLE PANEL ================= -->
   <div id="realtimeTablePanel" class="minimized">
     <div id="realtimeTablePanelHeader">
@@ -1193,7 +1191,7 @@
       </table>
     </div>
   </div>
-  
+ 
   <div id="images-grid"></div>
 </main>
 
@@ -1266,7 +1264,7 @@ function makePopupCollapsible(popupId, chevronId) {
     if (e) e.stopPropagation();
     const collapsed = popup.classList.toggle("collapsed");
     chevron.classList.toggle("rotate", !collapsed);
-    
+   
     if (!collapsed) {
       // Close other popups when opening this one
       const allPopups = document.querySelectorAll('.tag-popup');
@@ -1278,7 +1276,7 @@ function makePopupCollapsible(popupId, chevronId) {
           if (otherChevron) otherChevron.classList.remove('rotate');
         }
       });
-      
+     
       // Set max height based on content
       const body = popup.querySelector('.tag-popup-body');
       if (body) {
@@ -1291,7 +1289,7 @@ function makePopupCollapsible(popupId, chevronId) {
   };
 
   chevron.addEventListener("click", togglePopup);
-  
+ 
   if (header) {
     header.addEventListener("click", togglePopup);
   }
@@ -1307,7 +1305,7 @@ makePopupCollapsible("realtimePopup", "realtimePopupChevron");
 /* ================= SIDEBAR DROPDOWNS ================= */
 function toggleMenu(toggleBtn, dropdown, chevron) {
   if (!toggleBtn || !dropdown || !chevron) return;
-  
+ 
   toggleBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     const open = dropdown.style.display === "block";
@@ -1396,7 +1394,7 @@ sensorTablePanelHeader.addEventListener('click', (e) => {
   e.stopPropagation();
   const isMinimized = sensorTablePanel.classList.toggle('minimized');
   sensorTablePanelChevron.classList.toggle('rotated', isMinimized);
-  
+ 
   if (isMinimized) {
     sensorTableContainer.style.display = 'none';
   } else {
@@ -1414,45 +1412,45 @@ window.updateSensorTable = function(sensorId, sensorReadings) {
     if (!Array.isArray(sensorReadings)) {
       sensorReadings = [sensorReadings];
     }
-    
+   
     // Store all readings for this sensor
     if (!window.sensorTableData[sensorId]) {
       window.sensorTableData[sensorId] = [];
     }
-    
+   
     // Add new readings to the beginning (most recent first)
     sensorReadings.forEach(reading => {
       // Add timestamp if not present
       if (!reading.timestamp && !reading.Timestamp) {
         reading.timestamp = new Date().toISOString();
       }
-      
+     
       // Add sensor ID if not present
       if (!reading.sensorId && !reading.SensorId) {
         reading.sensorId = sensorId;
       }
-      
+     
       // Check if this reading already exists (by Id or timestamp)
-      const exists = window.sensorTableData[sensorId].some(existing => 
-        (existing.Id && existing.Id === reading.Id) || 
+      const exists = window.sensorTableData[sensorId].some(existing =>
+        (existing.Id && existing.Id === reading.Id) ||
         (existing.timestamp && existing.timestamp === reading.timestamp) ||
         (existing.Timestamp && existing.Timestamp === reading.Timestamp)
       );
-      
+     
       if (!exists) {
         window.sensorTableData[sensorId].unshift(reading); // Add to beginning
       }
     });
-    
+   
     // Keep only last 50 entries per sensor to prevent memory issues
     if (window.sensorTableData[sensorId].length > 50) {
       window.sensorTableData[sensorId] = window.sensorTableData[sensorId].slice(0, 50);
     }
   }
-  
+ 
   const tbody = document.getElementById('sensorDataTableBody');
   const thead = document.getElementById('sensorDataTableHeader');
-  
+ 
   // Collect all sensor data from all sensors
   const allSensorData = [];
   Object.keys(window.sensorTableData).forEach(sid => {
@@ -1460,7 +1458,7 @@ window.updateSensorTable = function(sensorId, sensorReadings) {
       allSensorData.push(reading);
     });
   });
-  
+ 
   if (allSensorData.length === 0) {
     tbody.innerHTML = `
       <tr class="no-data-row">
@@ -1469,20 +1467,20 @@ window.updateSensorTable = function(sensorId, sensorReadings) {
     `;
     return;
   }
-  
+ 
   // Clear and rebuild table
   tbody.innerHTML = '';
-  
+ 
   // Show all readings (most recent first)
   allSensorData.forEach((sensorData, index) => {
     const row = document.createElement('tr');
-    
+   
     // Sensor ID
     const idCell = document.createElement('td');
     idCell.className = 'sensor-id-cell';
     idCell.textContent = sensorData.sensorId || sensorData.SensorId || sensorId || 'N/A';
     row.appendChild(idCell);
-    
+   
     // Timestamp
     const timeCell = document.createElement('td');
     const timestamp = sensorData.timestamp || sensorData.Timestamp;
@@ -1496,67 +1494,67 @@ window.updateSensorTable = function(sensorId, sensorReadings) {
       timeCell.textContent = '-';
     }
     row.appendChild(timeCell);
-    
+   
     // EC
     const ecCell = document.createElement('td');
     ecCell.textContent = sensorData.EC !== undefined ? sensorData.EC : '-';
     row.appendChild(ecCell);
-    
+   
     // Moisture
     const moistureCell = document.createElement('td');
     moistureCell.textContent = sensorData.Moisture !== undefined ? sensorData.Moisture : '-';
     row.appendChild(moistureCell);
-    
+   
     // Nitrogen
     const nitrogenCell = document.createElement('td');
     nitrogenCell.textContent = sensorData.Nitrogen !== undefined ? sensorData.Nitrogen : '-';
     row.appendChild(nitrogenCell);
-    
+   
     // Phosphorous
     const phosphorousCell = document.createElement('td');
     phosphorousCell.textContent = sensorData.Phosphorous !== undefined ? sensorData.Phosphorous : '-';
     row.appendChild(phosphorousCell);
-    
+   
     // PH Value
     const phCell = document.createElement('td');
     phCell.textContent = sensorData.PHValue !== undefined ? sensorData.PHValue : '-';
     row.appendChild(phCell);
-    
+   
     // Potassium
     const potassiumCell = document.createElement('td');
     potassiumCell.textContent = sensorData.Potassium !== undefined ? sensorData.Potassium : '-';
     row.appendChild(potassiumCell);
-    
+   
     // Temperature
     const tempCell = document.createElement('td');
     tempCell.textContent = sensorData.Temperature !== undefined ? sensorData.Temperature : '-';
     row.appendChild(tempCell);
-    
+   
     // Id (if available)
     const recordIdCell = document.createElement('td');
     recordIdCell.textContent = sensorData.Id !== undefined ? sensorData.Id : '-';
     recordIdCell.style.color = '#9ca3af';
     recordIdCell.style.fontSize = '11px';
     row.appendChild(recordIdCell);
-    
+   
     // Latitude
     const latCell = document.createElement('td');
     latCell.textContent = sensorData.Latitude !== undefined ? sensorData.Latitude : '-';
     row.appendChild(latCell);
-    
+   
     // Longitude
     const lonCell = document.createElement('td');
     lonCell.textContent = sensorData.Longitude !== undefined ? sensorData.Longitude : '-';
     row.appendChild(lonCell);
-    
+   
     // Satellite Fix
     const satCell = document.createElement('td');
     satCell.textContent = sensorData.SatelliteFix !== undefined ? sensorData.SatelliteFix : '-';
     row.appendChild(satCell);
-    
+   
     tbody.appendChild(row);
   });
-  
+ 
   // Show sensor panel if minimized
   const sensorPanel = document.getElementById('sensorTablePanel');
   if (sensorPanel && sensorPanel.classList.contains('minimized')) {
@@ -1580,7 +1578,7 @@ realtimeTablePanelHeader.addEventListener('click', (e) => {
   e.stopPropagation();
   const isMinimized = realtimeTablePanel.classList.toggle('minimized');
   realtimeTablePanelChevron.classList.toggle('rotated', isMinimized);
-  
+ 
   if (isMinimized) {
     realtimeTableContainer.style.display = 'none';
   } else {
@@ -1595,7 +1593,7 @@ window.realtimeTableDataAllPoints = {};
 // Function to add ALL points for a tracker - THIS IS THE CORRECT FUNCTION NAME
 window.updateRealtimeTableAllPoints = function(trackerId, pointsArray, selectedParams = null) {
   console.log(`updateRealtimeTableAllPoints called with trackerId: ${trackerId}, pointsArray:`, pointsArray);
-  
+ 
   // Handle case when called without parameters (from clearMap)
   if (trackerId === undefined) {
     console.log('Clearing table data');
@@ -1606,32 +1604,32 @@ window.updateRealtimeTableAllPoints = function(trackerId, pointsArray, selectedP
     updateRealtimeTableWithAllPoints();
     return;
   }
-  
+ 
   if (trackerId && pointsArray && Array.isArray(pointsArray)) {
     console.log(`Processing ${pointsArray.length} points for tracker ${trackerId}`);
-    
+   
     // Store all points for this tracker
     if (!window.realtimeTableDataAllPoints[trackerId]) {
       window.realtimeTableDataAllPoints[trackerId] = [];
     }
-    
+   
     // Add all new points
     pointsArray.forEach(newPoint => {
       // Check if point already exists (by timestamp and tracker ID)
       const exists = window.realtimeTableDataAllPoints[trackerId].some(
-        existingPoint => existingPoint.timestamp === newPoint.timestamp && 
+        existingPoint => existingPoint.timestamp === newPoint.timestamp &&
                         existingPoint['Tracker ID'] === newPoint['Tracker ID']
       );
       if (!exists) {
         window.realtimeTableDataAllPoints[trackerId].push(newPoint);
       }
     });
-    
+   
     // Sort by timestamp (newest first)
     window.realtimeTableDataAllPoints[trackerId].sort((a, b) => {
       return new Date(b.timestamp) - new Date(a.timestamp);
     });
-    
+   
     // Store selected parameters
     if (selectedParams) {
       if (!window.realtimeTableParamsAll) {
@@ -1639,12 +1637,12 @@ window.updateRealtimeTableAllPoints = function(trackerId, pointsArray, selectedP
       }
       window.realtimeTableParamsAll[trackerId] = selectedParams;
     }
-    
+   
     console.log(`Now have ${window.realtimeTableDataAllPoints[trackerId].length} total points for ${trackerId}`);
   } else {
     console.warn('Invalid parameters passed to updateRealtimeTableAllPoints');
   }
-  
+ 
   // Update the table display
   updateRealtimeTableWithAllPoints();
 };
@@ -1652,10 +1650,10 @@ window.updateRealtimeTableAllPoints = function(trackerId, pointsArray, selectedP
 // Function to update table with ALL points
 function updateRealtimeTableWithAllPoints() {
   console.log('Updating real-time table with all points...');
-  
+ 
   // Get all trackers that have data
   const trackerIds = Object.keys(window.realtimeTableDataAllPoints || {});
-  
+ 
   if (trackerIds.length === 0) {
     console.log('No tracker data available');
     const tbody = document.querySelector('#realtimeDataTable tbody');
@@ -1668,11 +1666,11 @@ function updateRealtimeTableWithAllPoints() {
     }
     return;
   }
-  
+ 
   // Determine which columns to show
   const defaultColumns = ['Tracker ID', 'Point #', 'timestamp', 'latitude', 'longitude', 'altitude', 'uin_no', 'application', 'category'];
   const columns = new Set(['Tracker ID', 'Point #']);
-  
+ 
   // Add columns based on selected parameters for all trackers
   trackerIds.forEach(id => {
     const params = window.getRealtimeParameters ? window.getRealtimeParameters(id) : null;
@@ -1687,37 +1685,37 @@ function updateRealtimeTableWithAllPoints() {
       defaultColumns.forEach(col => columns.add(col));
     }
   });
-  
+ 
   // Convert set to array
   const columnArray = Array.from(columns);
   console.log('Columns to display:', columnArray);
-  
+ 
   // Update table headers
   const thead = document.querySelector('#realtimeDataTable thead');
   if (thead) {
     thead.innerHTML = '';
     const headerRow = document.createElement('tr');
-    
+   
     columnArray.forEach(column => {
       const th = document.createElement('th');
       th.textContent = formatHeaderText(column);
       headerRow.appendChild(th);
     });
-    
+   
     thead.appendChild(headerRow);
   }
-  
+ 
   // Update table body
   const tbody = document.querySelector('#realtimeDataTable tbody');
   if (tbody) {
     tbody.innerHTML = '';
-    
+   
     // Collect ALL points from ALL trackers
     let allPoints = [];
-    
+   
     trackerIds.forEach(trackerId => {
       const points = window.realtimeTableDataAllPoints[trackerId] || [];
-      
+     
       points.forEach((point, index) => {
         // Add point number to the point object
         const pointWithNumber = {
@@ -1727,9 +1725,9 @@ function updateRealtimeTableWithAllPoints() {
         allPoints.push(pointWithNumber);
       });
     });
-    
+   
     console.log(`Total points to display: ${allPoints.length}`);
-    
+   
     if (allPoints.length === 0) {
       const row = document.createElement('tr');
       row.className = 'no-data-row';
@@ -1743,23 +1741,23 @@ function updateRealtimeTableWithAllPoints() {
       allPoints.sort((a, b) => {
         return new Date(b.timestamp) - new Date(a.timestamp);
       });
-      
+     
       // Reset point numbers after sorting
       allPoints.forEach((point, index) => {
         point['Point #'] = index + 1;
       });
-      
+     
       // Add each point as a row
       allPoints.forEach((point) => {
         const row = document.createElement('tr');
         const trackerId = point['Tracker ID'];
-        
+       
         // Get the selected parameters for this tracker
         const trackerParams = window.getRealtimeParameters ? window.getRealtimeParameters(trackerId) : null;
-        
+       
         columnArray.forEach(column => {
           const td = document.createElement('td');
-          
+         
           if (column === 'Point #') {
             td.textContent = point[column] || '';
             td.style.fontWeight = '500';
@@ -1770,7 +1768,7 @@ function updateRealtimeTableWithAllPoints() {
           } else {
             // Check if this parameter is selected for this tracker
             const shouldShow = trackerParams ? trackerParams[column] : true;
-            
+           
             if (shouldShow && point[column] !== undefined) {
               td.textContent = formatCellValue(column, point[column]);
             } else {
@@ -1779,15 +1777,15 @@ function updateRealtimeTableWithAllPoints() {
               td.style.fontStyle = 'italic';
             }
           }
-          
+         
           row.appendChild(td);
         });
-        
+       
         tbody.appendChild(row);
       });
     }
   }
-  
+ 
   // Update panel title with point count
   const panelHeader = document.querySelector('#realtimeTablePanelHeader h2');
   if (panelHeader) {
@@ -1795,7 +1793,7 @@ function updateRealtimeTableWithAllPoints() {
       .reduce((sum, points) => sum + (points ? points.length : 0), 0);
     panelHeader.textContent = `Tracker Data Table (${totalPoints} points)`;
   }
-  
+ 
   // Show panel if minimized
   const realtimePanel = document.getElementById('realtimeTablePanel');
   if (realtimePanel && realtimePanel.classList.contains('minimized')) {
@@ -1805,7 +1803,7 @@ function updateRealtimeTableWithAllPoints() {
     const container = document.getElementById('realtimeTableContainer');
     if (container) container.style.display = 'block';
   }
-  
+ 
   console.log('Table update complete');
 }
 
@@ -1853,9 +1851,9 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!window.realtimeTableParamsAll) {
     window.realtimeTableParamsAll = {};
   }
-  
+ 
   console.log('Real-time table functions initialized');
-  
+ 
   // Initialize the table after a short delay
   setTimeout(() => {
     updateRealtimeTableWithAllPoints();
@@ -1878,7 +1876,18 @@ const saveTracker = (id) => {
   }
 };
 
-const getGroups = () => JSON.parse(localStorage.getItem(GROUP_KEY)) || {};
+const getGroups = () => {
+  const groups = JSON.parse(localStorage.getItem(GROUP_KEY)) || {};
+ 
+  // Always ensure guest group exists with tracker IDs 3001-3005
+  if (!groups['guest'] || !Array.isArray(groups['guest'])) {
+    groups['guest'] = ['3001', '3002', '3003', '3004', '3005'];
+    localStorage.setItem(GROUP_KEY, JSON.stringify(groups));
+  }
+ 
+  return groups;
+};
+
 const saveGroups = (groups) => localStorage.setItem(GROUP_KEY, JSON.stringify(groups));
 
 /* ================= REALTIME DATA SETTINGS ================= */
@@ -1955,22 +1964,65 @@ document.getElementById("openGroupPopup").onclick = (e) => {
 function renderGroups() {
   groupList.innerHTML = "";
   const groups = getGroups();
-  Object.keys(groups).forEach(groupName => {
-    const div = document.createElement("div");
-    div.className = "tracker-option";
-    div.textContent = groupName;
-    div.addEventListener("click", () => {
-      openGroupDetail(groupName);
+ 
+  // Always show guest group first
+  if (groups['guest']) {
+    const guestDiv = document.createElement("div");
+    guestDiv.className = "tracker-option";
+    guestDiv.style.backgroundColor = "#f0f9ff";
+    guestDiv.style.borderLeft = "4px solid #3b82f6";
+    guestDiv.innerHTML = `
+      <div style="display: flex; align-items: center; width: 100%;">
+        <i data-lucide="users" style="width: 20px; height: 20px; margin-right: 8px; color: #3b82f6;"></i>
+        <span style="flex: 1; font-weight: 600; color: #1e40af;">guest</span>
+        <span style="font-size: 11px; color: #6b7280; background: #e5e7eb; padding: 2px 6px; border-radius: 10px;">
+          ${groups['guest'].length} trackers
+        </span>
+      </div>
+    `;
+    guestDiv.addEventListener("click", () => {
+      openGroupDetail('guest');
       groupDetailPopup.style.maxHeight = "600px";
       groupDetailPopup.classList.remove("collapsed");
     });
-    groupList.appendChild(div);
+    groupList.appendChild(guestDiv);
+   
+    // Add separator
+    const separator = document.createElement("div");
+    separator.style.height = "1px";
+    separator.style.backgroundColor = "#e5e7eb";
+    separator.style.margin = "8px 0";
+    groupList.appendChild(separator);
+  }
+ 
+  // Show other user-created groups
+  Object.keys(groups).forEach(groupName => {
+    if (groupName !== 'guest') {
+      const div = document.createElement("div");
+      div.className = "tracker-option";
+      div.textContent = groupName;
+      div.addEventListener("click", () => {
+        openGroupDetail(groupName);
+        groupDetailPopup.style.maxHeight = "600px";
+        groupDetailPopup.classList.remove("collapsed");
+      });
+      groupList.appendChild(div);
+    }
   });
+ 
+  lucide.createIcons();
 }
 
 document.getElementById("createGroupBtn").onclick = () => {
   const name = document.getElementById("groupNameInput").value.trim();
   if (!name) return;
+ 
+  // Prevent creating a group named "guest"
+  if (name.toLowerCase() === 'guest') {
+    alert('"guest" is a reserved group name. Please choose a different name.');
+    return;
+  }
+ 
   const groups = getGroups();
   if (!groups[name]) groups[name] = [];
   saveGroups(groups);
@@ -1985,19 +2037,29 @@ const groupDetailTitle = document.getElementById("groupDetailTitle");
 
 let groupSettings = JSON.parse(localStorage.getItem('groupSettings')) || {};
 const defaultColors = [
-  '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', 
+  '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2',
   '#EF476F', '#9D4EDD', '#FB5607', '#3A86FF', '#8338EC'
 ];
 
 function openGroupDetail(groupName) {
   if (window.setActiveGroup) window.setActiveGroup(groupName);
   activeGroup = groupName;
-  groupDetailTitle.textContent = groupName;
+ 
+  // Update title with special styling for guest group
+  if (groupName === 'guest') {
+    groupDetailTitle.innerHTML = `
+      <span style="color: #1e40af; font-weight: 700;">${groupName}</span>
+      <span style="font-size: 12px; color: #6b7280; margin-left: 8px;">(Pre-configured demo group)</span>
+    `;
+  } else {
+    groupDetailTitle.textContent = groupName;
+  }
+ 
   const groups = getGroups();
   groupTrackerList.innerHTML = "";
-  
+ 
   if (!groupSettings[groupName]) groupSettings[groupName] = {};
-  
+ 
   (groups[groupName] || []).forEach((tid, index) => {
     if (!groupSettings[groupName][tid]) {
       groupSettings[groupName][tid] = {
@@ -2005,40 +2067,40 @@ function openGroupDetail(groupName) {
         color: defaultColors[index % defaultColors.length]
       };
     }
-    
+   
     const div = document.createElement("div");
     div.className = "tracker-option";
     div.dataset.trackerId = tid;
-    
+   
     const checkboxContainer = document.createElement("div");
     checkboxContainer.className = "checkbox-container";
-    
+   
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.className = "tracker-checkbox";
     checkbox.checked = groupSettings[groupName][tid].visible;
     checkbox.dataset.trackerId = tid;
-    
+   
     const colorPicker = document.createElement("input");
     colorPicker.type = "color";
     colorPicker.className = "tracker-color-picker";
     colorPicker.value = groupSettings[groupName][tid].color;
     colorPicker.dataset.trackerId = tid;
     colorPicker.style.display = "none";
-    
+   
     const colorPreview = document.createElement("div");
     colorPreview.className = "color-preview";
     colorPreview.style.backgroundColor = groupSettings[groupName][tid].color;
-    
+   
     const trackerIdSpan = document.createElement("span");
     trackerIdSpan.className = "tracker-id-text";
     trackerIdSpan.textContent = tid;
     trackerIdSpan.dataset.trackerId = tid;
-    
+   
     trackerIdSpan.onclick = () => {
       if (window.handleFetch) window.handleFetch(tid);
     };
-    
+   
     checkbox.onchange = (e) => {
       const trackerId = e.target.dataset.trackerId;
       const isVisible = e.target.checked;
@@ -2048,7 +2110,7 @@ function openGroupDetail(groupName) {
         window.updateTrackerVisibilityFromGroup(trackerId, isVisible);
       }
     };
-    
+   
     colorPicker.onchange = (e) => {
       const trackerId = e.target.dataset.trackerId;
       const newColor = e.target.value;
@@ -2059,9 +2121,9 @@ function openGroupDetail(groupName) {
         window.updateTrackerColorFromGroup(trackerId, newColor);
       }
     };
-    
+   
     colorPreview.onclick = () => colorPicker.click();
-    
+   
     checkboxContainer.appendChild(checkbox);
     checkboxContainer.appendChild(colorPreview);
     div.appendChild(checkboxContainer);
@@ -2069,8 +2131,27 @@ function openGroupDetail(groupName) {
     div.appendChild(trackerIdSpan);
     groupTrackerList.appendChild(div);
   });
-  
+ 
   saveGroupSettings();
+ 
+  // Special message for guest group
+  if (groupName === 'guest') {
+    const infoDiv = document.createElement("div");
+    infoDiv.style.marginTop = "10px";
+    infoDiv.style.padding = "8px";
+    infoDiv.style.backgroundColor = "#f0f9ff";
+    infoDiv.style.borderRadius = "6px";
+    infoDiv.style.fontSize = "12px";
+    infoDiv.style.color = "#1e40af";
+    infoDiv.innerHTML = `
+      <div style="display: flex; align-items: center;">
+        <i data-lucide="info" style="width: 14px; height: 14px; margin-right: 6px;"></i>
+        <span>This is a pre-configured demo group with trackers 3001-3005</span>
+      </div>
+    `;
+    groupTrackerList.insertBefore(infoDiv, groupTrackerList.firstChild);
+    lucide.createIcons();
+  }
 }
 
 function saveGroupSettings() {
@@ -2083,6 +2164,13 @@ document.getElementById("addTrackerToGroupBtn").onclick = () => {
     alert("Select a group first");
     return;
   }
+ 
+  // Prevent adding to guest group
+  if (activeGroup === 'guest') {
+    alert('Cannot add trackers to the guest group. It is a pre-configured demo group.');
+    return;
+  }
+ 
   const tracker = document.getElementById("groupTrackerInput").value.trim();
   if (!tracker) return;
   const groups = getGroups();
@@ -2097,6 +2185,13 @@ document.getElementById("addTrackerToGroupBtn").onclick = () => {
 // Add tracker to group (from group detail popup)
 document.getElementById("addTrackerToGroupDetailBtn").onclick = () => {
   if (!activeGroup) return;
+ 
+  // Prevent adding to guest group
+  if (activeGroup === 'guest') {
+    alert('Cannot add trackers to the guest group. It is a pre-configured demo group.');
+    return;
+  }
+ 
   const tracker = document.getElementById("groupDetailTrackerInput").value.trim();
   if (!tracker) return;
   const groups = getGroups();
@@ -2115,8 +2210,9 @@ document.getElementById("addTrackerToGroupDetailBtn").onclick = () => {
   openGroupDetail(activeGroup);
 };
 
+// === GROUP FETCH WITH AUTO-REFRESH ===
 let groupAutoInterval = null;
-let GROUP_AUTO_MS = 20000; // 10 sec
+let GROUP_AUTO_MS = 20000; // 20 sec
 
 document.getElementById("fetchGroupBtn").onclick = () => {
   if (!activeGroup) {
@@ -2126,7 +2222,7 @@ document.getElementById("fetchGroupBtn").onclick = () => {
 
   const groups = getGroups();
   const trackerIds = groups[activeGroup] || [];
-  
+ 
   if (trackerIds.length === 0) {
     alert("No trackers in this group");
     return;
@@ -2160,34 +2256,38 @@ document.getElementById("openRealtimePopup").onclick = (e) => {
 function renderRealtimeGroups() {
   realtimeGroupList.innerHTML = "";
   const groups = getGroups();
-  
+ 
   if (Object.keys(groups).length === 0) {
     realtimeGroupList.innerHTML = `
       <div style="padding: 20px; text-align: center; color: #6b7280;">
-        No groups found. Create groups first.
+        No groups found.
       </div>
     `;
     return;
   }
-  
-  Object.keys(groups).forEach(groupName => {
-    const groupDiv = document.createElement("div");
-    groupDiv.className = "realtime-group-header";
-    groupDiv.innerHTML = `
-      <i data-lucide="folder" style="width: 16px; height: 16px; margin-right: 8px; color: #6366f1;"></i>
-      <span class="realtime-group-name">${groupName}</span>
+ 
+  // Always show guest group first with special styling
+  if (groups['guest']) {
+    const guestGroupDiv = document.createElement("div");
+    guestGroupDiv.className = "realtime-group-header";
+    guestGroupDiv.style.background = "#f0f9ff";
+    guestGroupDiv.style.borderLeft = "4px solid #3b82f6";
+    guestGroupDiv.innerHTML = `
+      <i data-lucide="users" style="width: 16px; height: 16px; margin-right: 8px; color: #3b82f6;"></i>
+      <span class="realtime-group-name" style="color: #1e40af; font-weight: 600;">guest</span>
+      <span style="font-size: 11px; color: #6b7280; margin-right: 8px;">(${groups['guest'].length} trackers)</span>
       <i data-lucide="chevron-right" class="group-expand-btn" style="width: 16px; height: 16px;"></i>
     `;
-    
-    const trackerList = document.createElement("div");
-    trackerList.className = "realtime-tracker-list";
-    trackerList.style.display = "none";
-    
-    groups[groupName].forEach(trackerId => {
+   
+    const guestTrackerList = document.createElement("div");
+    guestTrackerList.className = "realtime-tracker-list";
+    guestTrackerList.style.display = "none";
+   
+    groups['guest'].forEach(trackerId => {
       const trackerDiv = document.createElement("div");
       trackerDiv.className = "realtime-tracker-item";
       trackerDiv.dataset.trackerId = trackerId;
-      trackerDiv.dataset.groupName = groupName;
+      trackerDiv.dataset.groupName = 'guest';
       trackerDiv.innerHTML = `
         <i data-lucide="tag" style="width: 14px; height: 14px; margin-right: 8px; color: #6b7280;"></i>
         <span class="realtime-tracker-id">${trackerId}</span>
@@ -2196,21 +2296,72 @@ function renderRealtimeGroups() {
         e.stopPropagation();
         showTrackerParameters(trackerId);
       };
-      trackerList.appendChild(trackerDiv);
+      guestTrackerList.appendChild(trackerDiv);
     });
-    
-    const chevron = groupDiv.querySelector(".group-expand-btn");
-    groupDiv.onclick = () => {
-      const isExpanded = trackerList.style.display === "block";
-      trackerList.style.display = isExpanded ? "none" : "block";
-      chevron.classList.toggle("rotated", !isExpanded);
+   
+    const guestChevron = guestGroupDiv.querySelector(".group-expand-btn");
+    guestGroupDiv.onclick = () => {
+      const isExpanded = guestTrackerList.style.display === "block";
+      guestTrackerList.style.display = isExpanded ? "none" : "block";
+      guestChevron.classList.toggle("rotated", !isExpanded);
       lucide.createIcons();
     };
-    
-    realtimeGroupList.appendChild(groupDiv);
-    realtimeGroupList.appendChild(trackerList);
+   
+    realtimeGroupList.appendChild(guestGroupDiv);
+    realtimeGroupList.appendChild(guestTrackerList);
+   
+    // Add separator
+    const separator = document.createElement("div");
+    separator.style.height = "1px";
+    separator.style.backgroundColor = "#e5e7eb";
+    separator.style.margin = "8px 0";
+    realtimeGroupList.appendChild(separator);
+  }
+ 
+  // Show other user-created groups
+  Object.keys(groups).forEach(groupName => {
+    if (groupName !== 'guest') {
+      const groupDiv = document.createElement("div");
+      groupDiv.className = "realtime-group-header";
+      groupDiv.innerHTML = `
+        <i data-lucide="folder" style="width: 16px; height: 16px; margin-right: 8px; color: #6366f1;"></i>
+        <span class="realtime-group-name">${groupName}</span>
+        <i data-lucide="chevron-right" class="group-expand-btn" style="width: 16px; height: 16px;"></i>
+      `;
+     
+      const trackerList = document.createElement("div");
+      trackerList.className = "realtime-tracker-list";
+      trackerList.style.display = "none";
+     
+      groups[groupName].forEach(trackerId => {
+        const trackerDiv = document.createElement("div");
+        trackerDiv.className = "realtime-tracker-item";
+        trackerDiv.dataset.trackerId = trackerId;
+        trackerDiv.dataset.groupName = groupName;
+        trackerDiv.innerHTML = `
+          <i data-lucide="tag" style="width: 14px; height: 14px; margin-right: 8px; color: #6b7280;"></i>
+          <span class="realtime-tracker-id">${trackerId}</span>
+        `;
+        trackerDiv.onclick = (e) => {
+          e.stopPropagation();
+          showTrackerParameters(trackerId);
+        };
+        trackerList.appendChild(trackerDiv);
+      });
+     
+      const chevron = groupDiv.querySelector(".group-expand-btn");
+      groupDiv.onclick = () => {
+        const isExpanded = trackerList.style.display === "block";
+        trackerList.style.display = isExpanded ? "none" : "block";
+        chevron.classList.toggle("rotated", !isExpanded);
+        lucide.createIcons();
+      };
+     
+      realtimeGroupList.appendChild(groupDiv);
+      realtimeGroupList.appendChild(trackerList);
+    }
   });
-  
+ 
   lucide.createIcons();
 }
 
@@ -2218,18 +2369,18 @@ function showTrackerParameters(trackerId) {
   selectedTrackerForRealtime = trackerId;
   document.getElementById("selectedTrackerId").textContent = trackerId;
   document.getElementById("trackerParametersSection").style.display = "block";
-  
+ 
   const parametersContainer = document.getElementById("parametersCheckboxes");
   parametersContainer.innerHTML = "";
-  
+ 
   const settings = getRealtimeSettings();
   const trackerSettings = settings[trackerId] || {};
-  
+ 
   availableParameters.forEach(param => {
     const div = document.createElement("div");
     div.className = "parameter-option";
     const checkboxId = `param_${trackerId}_${param.id}`;
-    const isChecked = trackerSettings[param.id] !== undefined ? 
+    const isChecked = trackerSettings[param.id] !== undefined ?
                       trackerSettings[param.id] : param.default;
     div.innerHTML = `
       <input type="checkbox" id="${checkboxId}" ${isChecked ? 'checked' : ''}>
@@ -2311,6 +2462,22 @@ window.addEventListener('resize', handleResize);
 handleResize();
 
 /* ================= INITIALIZATION ================= */
+// Initialize guest group trackers in saved trackers
+const groups = getGroups();
+if (groups['guest']) {
+  const savedTrackers = getSavedTrackers();
+  let updated = false;
+  groups['guest'].forEach(trackerId => {
+    if (!savedTrackers.includes(trackerId)) {
+      savedTrackers.push(trackerId);
+      updated = true;
+    }
+  });
+  if (updated) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedTrackers));
+  }
+}
+
 renderTrackers();
 renderSensors();
 renderGroups();
@@ -2330,7 +2497,7 @@ document.addEventListener('click', (e) => {
   const isClickInsidePopup = Array.from(popups).some(popup => popup.contains(e.target));
   const isClickInsideSidebar = sidebar.contains(e.target);
   const isClickOnMobileToggle = mobileMenuToggle.contains(e.target);
-  
+ 
   if (!isClickInsidePopup && !isClickInsideSidebar && !isClickOnMobileToggle) {
     closeAllPopups();
   }
@@ -2347,7 +2514,7 @@ document.addEventListener('keydown', (e) => {
       sensorHeader.click();
     }
   }
-  
+ 
   // Alt+T for tracker panel
   if (e.altKey && e.key === 't') {
     e.preventDefault();
@@ -2358,10 +2525,6 @@ document.addEventListener('keydown', (e) => {
     }
   }
 });
-
-
-
 </script>
-
 </body>
 </html>
