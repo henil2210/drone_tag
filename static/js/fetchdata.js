@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ================= GROUP AUTO-REFRESH ================= */
 
 let groupAutoInterval = null;
-let groupAutoSeconds = 10000; // 10 sec default
+let groupAutoSeconds = 30000; // 30 sec default
 
 function startGroupAutoRefresh() {
   if (groupAutoInterval) clearInterval(groupAutoInterval);
