@@ -194,18 +194,11 @@
   align-items: center;
   justify-content: center;
 }
-
-
-
-
 .sidebar-item:hover .sidebar-icon {
   border-color: #4f46e5;
   color: #4f46e5;
   background: #a9adafff;
 }
-
-
-
     .sidebar-item span {
       font-size: 13px;
       color: #374151;
@@ -313,7 +306,7 @@
     }
 
     .tag-popup.collapsed {
-      max-height: 0 !important;
+      max-height = 0 !important;
     }
 
     .tag-popup-header {
@@ -934,15 +927,15 @@
 
   <div class="header-center">
     <span class="site-name">DRONE TAG</span>
-    <img src="/static/images/drone.png" class="Drone-photo">
+    <img src="/static/images/Drone.png" class="Drone-photo">
   </div>
 
   <div class="header-right"></div>
 
   <div class="user-container dropdown">
-  <img src="{{ url_for('static', filename='images/profile.png') }}"
-       alt="Profile"
-       class="profile dropdown-toggle"
+  <img src="{{ url_for('static', filename='images/profile.png') }}" 
+       alt="Profile" 
+       class="profile dropdown-toggle" 
        id="dropdownMenu"
        title="Your Account">
   <div class="dropdown-menu" id="dropdownContent">
@@ -955,8 +948,6 @@
 </div>
 
 </header>
-
-
 <div class="overlay" id="overlay"></div>
 
 <!-- ================= SIDEBAR ================= -->
@@ -1109,16 +1100,16 @@
       <span>Select Group</span>
       <i data-lucide="chevron-down" class="chevron" id="realtimeGroupChevron"></i>
     </div>
-   
+    
     <div class="tracker-dropdown collapsible" id="realtimeGroupList"></div>
 
     <div id="trackerParametersSection" style="display: none;">
       <div style="margin: 15px 0 10px 0; font-weight: 600; color: #374151;">
         Selected Tracker: <span id="selectedTrackerId">-</span>
       </div>
-     
+      
       <div id="parametersCheckboxes" class="tracker-dropdown collapsible" style="max-height: 200px;"></div>
-     
+      
       <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
         <button id="saveParametersBtn" style="width: 100%; padding: 8px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer;">
           Save Parameters
@@ -1132,11 +1123,11 @@
 <main>
   <div id="status-message"></div>
   <div class="last-updated"></div>
- 
+  
   <div class="map-container">
     <div id="map"></div>
   </div>
- 
+  
  <!-- ================= SENSOR DATA TABLE PANEL ================= -->
 <div id="sensorTablePanel" class="minimized">
   <div id="sensorTablePanelHeader">
@@ -1154,22 +1145,23 @@
           <th>Moisture</th>
           <th>Temperature</th>
           <th>EC</th>
-          <th>pH Value</th>
+          <th>pH</th>
           <th>Nitrogen</th>
           <th>Phosphorous</th>
           <th>Potassium</th>
-          <th>Satellite Fix</th>
+          <th>Sat Fix</th>
+          <!--<th>Altitude</th>-->
         </tr>
       </thead>
       <tbody id="sensorDataTableBody">
         <tr class="no-data-row">
-          <td colspan="12">No sensor data available. Fetch a sensor first.</td>
+          <td colspan="13">No sensor data available. Fetch a sensor first.</td>
         </tr>
       </tbody>
     </table>
   </div>
 </div>
- 
+  
   <!-- ================= REALTIME DATA TABLE PANEL ================= -->
   <div id="realtimeTablePanel" class="minimized">
     <div id="realtimeTablePanelHeader">
@@ -1191,7 +1183,7 @@
       </table>
     </div>
   </div>
- 
+  
   <div id="images-grid"></div>
 </main>
 
@@ -1219,8 +1211,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
-
-
 
 /* ================= MOBILE MENU ================= */
 const mobileMenuToggle = document.getElementById('mobileMenuToggle');
@@ -1264,7 +1254,7 @@ function makePopupCollapsible(popupId, chevronId) {
     if (e) e.stopPropagation();
     const collapsed = popup.classList.toggle("collapsed");
     chevron.classList.toggle("rotate", !collapsed);
-   
+    
     if (!collapsed) {
       // Close other popups when opening this one
       const allPopups = document.querySelectorAll('.tag-popup');
@@ -1276,7 +1266,7 @@ function makePopupCollapsible(popupId, chevronId) {
           if (otherChevron) otherChevron.classList.remove('rotate');
         }
       });
-     
+      
       // Set max height based on content
       const body = popup.querySelector('.tag-popup-body');
       if (body) {
@@ -1289,7 +1279,7 @@ function makePopupCollapsible(popupId, chevronId) {
   };
 
   chevron.addEventListener("click", togglePopup);
- 
+  
   if (header) {
     header.addEventListener("click", togglePopup);
   }
@@ -1305,7 +1295,7 @@ makePopupCollapsible("realtimePopup", "realtimePopupChevron");
 /* ================= SIDEBAR DROPDOWNS ================= */
 function toggleMenu(toggleBtn, dropdown, chevron) {
   if (!toggleBtn || !dropdown || !chevron) return;
- 
+  
   toggleBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     const open = dropdown.style.display === "block";
@@ -1394,175 +1384,103 @@ sensorTablePanelHeader.addEventListener('click', (e) => {
   e.stopPropagation();
   const isMinimized = sensorTablePanel.classList.toggle('minimized');
   sensorTablePanelChevron.classList.toggle('rotated', isMinimized);
- 
-  if (isMinimized) {
-    sensorTableContainer.style.display = 'none';
-  } else {
-    sensorTableContainer.style.display = 'block';
-  }
+  sensorTableContainer.style.display = isMinimized ? 'none' : 'block';
 });
 
-// Store sensor table data - Array to handle multiple entries for same sensor
+// Store sensor historical readings
 window.sensorTableData = {};
 
-// Function to update sensor data table
+// Unified timestamp formatter
+function normalizeTimestamp(ts) {
+  if (!ts) return null;
+
+  // convert "24-01-2026 10:16:00" → "2026-01-24T10:16:00"
+  if (typeof ts === "string" && ts.includes("-")) {
+    const [d, m, y] = ts.split(" ")[0].split("-");
+    const time = ts.split(" ")[1] || "00:00:00";
+    return `${y}-${m}-${d}T${time}`;
+  }
+  return ts;
+}
+
+// Main update function - FROM 1ST CODE
 window.updateSensorTable = function(sensorId, sensorReadings) {
+
+  // Normalize array
   if (sensorId && sensorReadings) {
-    // Ensure sensorReadings is an array
     if (!Array.isArray(sensorReadings)) {
       sensorReadings = [sensorReadings];
     }
-   
-    // Store all readings for this sensor
+
     if (!window.sensorTableData[sensorId]) {
       window.sensorTableData[sensorId] = [];
     }
-   
-    // Add new readings to the beginning (most recent first)
+
     sensorReadings.forEach(reading => {
-      // Add timestamp if not present
-      if (!reading.timestamp && !reading.Timestamp) {
-        reading.timestamp = new Date().toISOString();
-      }
-     
-      // Add sensor ID if not present
-      if (!reading.sensorId && !reading.SensorId) {
-        reading.sensorId = sensorId;
-      }
-     
-      // Check if this reading already exists (by Id or timestamp)
-      const exists = window.sensorTableData[sensorId].some(existing =>
-        (existing.Id && existing.Id === reading.Id) ||
-        (existing.timestamp && existing.timestamp === reading.timestamp) ||
-        (existing.Timestamp && existing.Timestamp === reading.Timestamp)
+      if (!reading.SensorId) reading.SensorId = sensorId;
+      if (!reading.Timestamp) reading.Timestamp = new Date().toISOString();
+      reading.Timestamp = normalizeTimestamp(reading.Timestamp);
+
+      // Dedupe by Id or timestamp
+      const exists = window.sensorTableData[sensorId].some(r =>
+        (r.Id && r.Id === reading.Id) ||
+        (r.Timestamp && r.Timestamp === reading.Timestamp)
       );
-     
+
       if (!exists) {
-        window.sensorTableData[sensorId].unshift(reading); // Add to beginning
+        window.sensorTableData[sensorId].unshift(reading);
       }
     });
-   
-    // Keep only last 50 entries per sensor to prevent memory issues
+
+    // Limit history
     if (window.sensorTableData[sensorId].length > 50) {
-      window.sensorTableData[sensorId] = window.sensorTableData[sensorId].slice(0, 50);
+      window.sensorTableData[sensorId].length = 50;
     }
   }
- 
-  const tbody = document.getElementById('sensorDataTableBody');
-  const thead = document.getElementById('sensorDataTableHeader');
- 
-  // Collect all sensor data from all sensors
+
+  const tbody = document.getElementById("sensorDataTableBody");
+
   const allSensorData = [];
-  Object.keys(window.sensorTableData).forEach(sid => {
-    window.sensorTableData[sid].forEach(reading => {
-      allSensorData.push(reading);
-    });
-  });
- 
+  Object.values(window.sensorTableData).forEach(arr => arr.forEach(r => allSensorData.push(r)));
+
   if (allSensorData.length === 0) {
     tbody.innerHTML = `
       <tr class="no-data-row">
-        <td colspan="12">No sensor data available. Fetch a sensor first.</td>
-      </tr>
-    `;
+        <td colspan="13" style="text-align:center;">No sensor data available. Fetch a sensor first.</td>
+      </tr>`;
     return;
   }
- 
-  // Clear and rebuild table
-  tbody.innerHTML = '';
- 
-  // Show all readings (most recent first)
-  allSensorData.forEach((sensorData, index) => {
-    const row = document.createElement('tr');
-   
-    // Sensor ID
-    const idCell = document.createElement('td');
-    idCell.className = 'sensor-id-cell';
-    idCell.textContent = sensorData.sensorId || sensorData.SensorId || sensorId || 'N/A';
-    row.appendChild(idCell);
-   
-    // Timestamp
-    const timeCell = document.createElement('td');
-    const timestamp = sensorData.timestamp || sensorData.Timestamp;
-    if (timestamp) {
-      try {
-        timeCell.textContent = new Date(timestamp).toLocaleString();
-      } catch (e) {
-        timeCell.textContent = timestamp;
-      }
-    } else {
-      timeCell.textContent = '-';
-    }
-    row.appendChild(timeCell);
-   
-    // EC
-    const ecCell = document.createElement('td');
-    ecCell.textContent = sensorData.EC !== undefined ? sensorData.EC : '-';
-    row.appendChild(ecCell);
-   
-    // Moisture
-    const moistureCell = document.createElement('td');
-    moistureCell.textContent = sensorData.Moisture !== undefined ? sensorData.Moisture : '-';
-    row.appendChild(moistureCell);
-   
-    // Nitrogen
-    const nitrogenCell = document.createElement('td');
-    nitrogenCell.textContent = sensorData.Nitrogen !== undefined ? sensorData.Nitrogen : '-';
-    row.appendChild(nitrogenCell);
-   
-    // Phosphorous
-    const phosphorousCell = document.createElement('td');
-    phosphorousCell.textContent = sensorData.Phosphorous !== undefined ? sensorData.Phosphorous : '-';
-    row.appendChild(phosphorousCell);
-   
-    // PH Value
-    const phCell = document.createElement('td');
-    phCell.textContent = sensorData.PHValue !== undefined ? sensorData.PHValue : '-';
-    row.appendChild(phCell);
-   
-    // Potassium
-    const potassiumCell = document.createElement('td');
-    potassiumCell.textContent = sensorData.Potassium !== undefined ? sensorData.Potassium : '-';
-    row.appendChild(potassiumCell);
-   
-    // Temperature
-    const tempCell = document.createElement('td');
-    tempCell.textContent = sensorData.Temperature !== undefined ? sensorData.Temperature : '-';
-    row.appendChild(tempCell);
-   
-    // Id (if available)
-    const recordIdCell = document.createElement('td');
-    recordIdCell.textContent = sensorData.Id !== undefined ? sensorData.Id : '-';
-    recordIdCell.style.color = '#9ca3af';
-    recordIdCell.style.fontSize = '11px';
-    row.appendChild(recordIdCell);
-   
-    // Latitude
-    const latCell = document.createElement('td');
-    latCell.textContent = sensorData.Latitude !== undefined ? sensorData.Latitude : '-';
-    row.appendChild(latCell);
-   
-    // Longitude
-    const lonCell = document.createElement('td');
-    lonCell.textContent = sensorData.Longitude !== undefined ? sensorData.Longitude : '-';
-    row.appendChild(lonCell);
-   
-    // Satellite Fix
-    const satCell = document.createElement('td');
-    satCell.textContent = sensorData.SatelliteFix !== undefined ? sensorData.SatelliteFix : '-';
-    row.appendChild(satCell);
-   
-    tbody.appendChild(row);
+
+  // Sort latest first
+  allSensorData.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+
+  tbody.innerHTML = "";
+
+  allSensorData.forEach(sensorData => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="sensor-id-cell">${sensorData.SensorId ?? "-"}</td>
+      <td>${new Date(sensorData.Timestamp).toLocaleString()}</td>
+      <td>${sensorData.Moisture ?? "-"}</td>
+      <td>${sensorData.Temperature ?? "-"}</td>
+      <td>${sensorData.EC ?? "-"}</td>
+      <td>${sensorData.PHValue ?? "-"}</td>
+      <td>${sensorData.Nitrogen ?? "-"}</td>
+      <td>${sensorData.Phosphorous ?? "-"}</td>
+      <td>${sensorData.Potassium ?? "-"}</td>
+      <td>${sensorData.Latitude ?? "-"}</td>
+      <td>${sensorData.Longitude ?? "-"}</td>
+      <td>${sensorData.SatelliteFix ?? "-"}</td>
+      <td style="color:#9ca3af;font-size:11px;">${sensorData.Id ?? "-"}</td>
+    `;
+    tbody.appendChild(tr);
   });
- 
-  // Show sensor panel if minimized
-  const sensorPanel = document.getElementById('sensorTablePanel');
-  if (sensorPanel && sensorPanel.classList.contains('minimized')) {
-    sensorPanel.classList.remove('minimized');
-    const chevron = document.getElementById('sensorTablePanelChevron');
-    if (chevron) chevron.classList.remove('rotated');
-    const container = document.getElementById('sensorTableContainer');
-    if (container) container.style.display = 'block';
+
+  // auto expand panel when data arrives
+  if (sensorTablePanel.classList.contains('minimized')) {
+    sensorTablePanel.classList.remove('minimized');
+    sensorTablePanelChevron.classList.remove('rotated');
+    sensorTableContainer.style.display = "block";
   }
 };
 
@@ -1578,7 +1496,7 @@ realtimeTablePanelHeader.addEventListener('click', (e) => {
   e.stopPropagation();
   const isMinimized = realtimeTablePanel.classList.toggle('minimized');
   realtimeTablePanelChevron.classList.toggle('rotated', isMinimized);
- 
+  
   if (isMinimized) {
     realtimeTableContainer.style.display = 'none';
   } else {
@@ -1589,11 +1507,10 @@ realtimeTablePanelHeader.addEventListener('click', (e) => {
 // Store ALL points data for each tracker
 window.realtimeTableDataAllPoints = {};
 
-// Function to add ALL points for a tracker - THIS IS THE CORRECT FUNCTION NAME
-// Function to add ALL points for a tracker - THIS IS THE CORRECT FUNCTION NAME
+// Function to add ALL points for a tracker
 window.updateRealtimeTableAllPoints = function(trackerId, pointsArray, selectedParams = null) {
   console.log(`updateRealtimeTableAllPoints called with trackerId: ${trackerId}, pointsArray:`, pointsArray);
- 
+  
   // Handle case when called without parameters (from clearMap)
   if (trackerId === undefined) {
     console.log('Clearing table data');
@@ -1604,32 +1521,32 @@ window.updateRealtimeTableAllPoints = function(trackerId, pointsArray, selectedP
     updateRealtimeTableWithAllPoints();
     return;
   }
- 
+  
   if (trackerId && pointsArray && Array.isArray(pointsArray)) {
     console.log(`Processing ${pointsArray.length} points for tracker ${trackerId}`);
-   
+    
     // Store all points for this tracker
     if (!window.realtimeTableDataAllPoints[trackerId]) {
       window.realtimeTableDataAllPoints[trackerId] = [];
     }
-   
+    
     // Add all new points
     pointsArray.forEach(newPoint => {
       // Check if point already exists (by timestamp and tracker ID)
       const exists = window.realtimeTableDataAllPoints[trackerId].some(
-        existingPoint => existingPoint.timestamp === newPoint.timestamp &&
+        existingPoint => existingPoint.timestamp === newPoint.timestamp && 
                         existingPoint['Tracker ID'] === newPoint['Tracker ID']
       );
       if (!exists) {
         window.realtimeTableDataAllPoints[trackerId].push(newPoint);
       }
     });
-   
+    
     // Sort by timestamp (newest first)
     window.realtimeTableDataAllPoints[trackerId].sort((a, b) => {
       return new Date(b.timestamp) - new Date(a.timestamp);
     });
-   
+    
     // Store selected parameters
     if (selectedParams) {
       if (!window.realtimeTableParamsAll) {
@@ -1637,23 +1554,23 @@ window.updateRealtimeTableAllPoints = function(trackerId, pointsArray, selectedP
       }
       window.realtimeTableParamsAll[trackerId] = selectedParams;
     }
-   
+    
     console.log(`Now have ${window.realtimeTableDataAllPoints[trackerId].length} total points for ${trackerId}`);
   } else {
     console.warn('Invalid parameters passed to updateRealtimeTableAllPoints');
   }
- 
+  
   // Update the table display
   updateRealtimeTableWithAllPoints();
 };
-// Function to update table with ALL points
+
 // Function to update table with ALL points
 function updateRealtimeTableWithAllPoints() {
   console.log('Updating real-time table with all points...');
- 
+  
   // Get all trackers that have data
   const trackerIds = Object.keys(window.realtimeTableDataAllPoints || {});
- 
+  
   if (trackerIds.length === 0) {
     console.log('No tracker data available');
     const tbody = document.querySelector('#realtimeDataTable tbody');
@@ -1666,11 +1583,11 @@ function updateRealtimeTableWithAllPoints() {
     }
     return;
   }
- 
+  
   // Determine which columns to show
   const defaultColumns = ['Tracker ID', 'Point #', 'timestamp', 'latitude', 'longitude', 'altitude', 'uin_no', 'application', 'category'];
   const columns = new Set(['Tracker ID', 'Point #']);
- 
+  
   // Add columns based on selected parameters for all trackers
   trackerIds.forEach(id => {
     const params = window.getRealtimeParameters ? window.getRealtimeParameters(id) : null;
@@ -1685,37 +1602,37 @@ function updateRealtimeTableWithAllPoints() {
       defaultColumns.forEach(col => columns.add(col));
     }
   });
- 
+  
   // Convert set to array
   const columnArray = Array.from(columns);
   console.log('Columns to display:', columnArray);
- 
+  
   // Update table headers
   const thead = document.querySelector('#realtimeDataTable thead');
   if (thead) {
     thead.innerHTML = '';
     const headerRow = document.createElement('tr');
-   
+    
     columnArray.forEach(column => {
       const th = document.createElement('th');
       th.textContent = formatHeaderText(column);
       headerRow.appendChild(th);
     });
-   
+    
     thead.appendChild(headerRow);
   }
- 
+  
   // Update table body
   const tbody = document.querySelector('#realtimeDataTable tbody');
   if (tbody) {
     tbody.innerHTML = '';
-   
+    
     // Collect ALL points from ALL trackers
     let allPoints = [];
-   
+    
     trackerIds.forEach(trackerId => {
       const points = window.realtimeTableDataAllPoints[trackerId] || [];
-     
+      
       points.forEach((point, index) => {
         // Add point number to the point object
         const pointWithNumber = {
@@ -1725,9 +1642,9 @@ function updateRealtimeTableWithAllPoints() {
         allPoints.push(pointWithNumber);
       });
     });
-   
+    
     console.log(`Total points to display: ${allPoints.length}`);
-   
+    
     if (allPoints.length === 0) {
       const row = document.createElement('tr');
       row.className = 'no-data-row';
@@ -1741,23 +1658,23 @@ function updateRealtimeTableWithAllPoints() {
       allPoints.sort((a, b) => {
         return new Date(b.timestamp) - new Date(a.timestamp);
       });
-     
+      
       // Reset point numbers after sorting
       allPoints.forEach((point, index) => {
         point['Point #'] = index + 1;
       });
-     
+      
       // Add each point as a row
       allPoints.forEach((point) => {
         const row = document.createElement('tr');
         const trackerId = point['Tracker ID'];
-       
+        
         // Get the selected parameters for this tracker
         const trackerParams = window.getRealtimeParameters ? window.getRealtimeParameters(trackerId) : null;
-       
+        
         columnArray.forEach(column => {
           const td = document.createElement('td');
-         
+          
           if (column === 'Point #') {
             td.textContent = point[column] || '';
             td.style.fontWeight = '500';
@@ -1768,7 +1685,7 @@ function updateRealtimeTableWithAllPoints() {
           } else {
             // Check if this parameter is selected for this tracker
             const shouldShow = trackerParams ? trackerParams[column] : true;
-           
+            
             if (shouldShow && point[column] !== undefined) {
               td.textContent = formatCellValue(column, point[column]);
             } else {
@@ -1777,15 +1694,15 @@ function updateRealtimeTableWithAllPoints() {
               td.style.fontStyle = 'italic';
             }
           }
-         
+          
           row.appendChild(td);
         });
-       
+        
         tbody.appendChild(row);
       });
     }
   }
- 
+  
   // Update panel title with point count
   const panelHeader = document.querySelector('#realtimeTablePanelHeader h2');
   if (panelHeader) {
@@ -1793,7 +1710,7 @@ function updateRealtimeTableWithAllPoints() {
       .reduce((sum, points) => sum + (points ? points.length : 0), 0);
     panelHeader.textContent = `Tracker Data Table (${totalPoints} points)`;
   }
- 
+  
   // Show panel if minimized
   const realtimePanel = document.getElementById('realtimeTablePanel');
   if (realtimePanel && realtimePanel.classList.contains('minimized')) {
@@ -1803,7 +1720,7 @@ function updateRealtimeTableWithAllPoints() {
     const container = document.getElementById('realtimeTableContainer');
     if (container) container.style.display = 'block';
   }
- 
+  
   console.log('Table update complete');
 }
 
@@ -1851,9 +1768,9 @@ document.addEventListener('DOMContentLoaded', function() {
   if (!window.realtimeTableParamsAll) {
     window.realtimeTableParamsAll = {};
   }
- 
+  
   console.log('Real-time table functions initialized');
- 
+  
   // Initialize the table after a short delay
   setTimeout(() => {
     updateRealtimeTableWithAllPoints();
@@ -1878,13 +1795,13 @@ const saveTracker = (id) => {
 
 const getGroups = () => {
   const groups = JSON.parse(localStorage.getItem(GROUP_KEY)) || {};
- 
+  
   // Always ensure guest group exists with tracker IDs 3001-3005
   if (!groups['guest'] || !Array.isArray(groups['guest'])) {
     groups['guest'] = ['3001', '3002', '3003', '3004', '3005'];
     localStorage.setItem(GROUP_KEY, JSON.stringify(groups));
   }
- 
+  
   return groups;
 };
 
@@ -1964,7 +1881,7 @@ document.getElementById("openGroupPopup").onclick = (e) => {
 function renderGroups() {
   groupList.innerHTML = "";
   const groups = getGroups();
- 
+  
   // Always show guest group first
   if (groups['guest']) {
     const guestDiv = document.createElement("div");
@@ -1986,7 +1903,7 @@ function renderGroups() {
       groupDetailPopup.classList.remove("collapsed");
     });
     groupList.appendChild(guestDiv);
-   
+    
     // Add separator
     const separator = document.createElement("div");
     separator.style.height = "1px";
@@ -1994,7 +1911,7 @@ function renderGroups() {
     separator.style.margin = "8px 0";
     groupList.appendChild(separator);
   }
- 
+  
   // Show other user-created groups
   Object.keys(groups).forEach(groupName => {
     if (groupName !== 'guest') {
@@ -2009,20 +1926,20 @@ function renderGroups() {
       groupList.appendChild(div);
     }
   });
- 
+  
   lucide.createIcons();
 }
 
 document.getElementById("createGroupBtn").onclick = () => {
   const name = document.getElementById("groupNameInput").value.trim();
   if (!name) return;
- 
+  
   // Prevent creating a group named "guest"
   if (name.toLowerCase() === 'guest') {
     alert('"guest" is a reserved group name. Please choose a different name.');
     return;
   }
- 
+  
   const groups = getGroups();
   if (!groups[name]) groups[name] = [];
   saveGroups(groups);
@@ -2037,14 +1954,14 @@ const groupDetailTitle = document.getElementById("groupDetailTitle");
 
 let groupSettings = JSON.parse(localStorage.getItem('groupSettings')) || {};
 const defaultColors = [
-  '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2',
+  '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', 
   '#EF476F', '#9D4EDD', '#FB5607', '#3A86FF', '#8338EC'
 ];
 
 function openGroupDetail(groupName) {
   if (window.setActiveGroup) window.setActiveGroup(groupName);
   activeGroup = groupName;
- 
+  
   // Update title with special styling for guest group
   if (groupName === 'guest') {
     groupDetailTitle.innerHTML = `
@@ -2054,12 +1971,12 @@ function openGroupDetail(groupName) {
   } else {
     groupDetailTitle.textContent = groupName;
   }
- 
+  
   const groups = getGroups();
   groupTrackerList.innerHTML = "";
- 
+  
   if (!groupSettings[groupName]) groupSettings[groupName] = {};
- 
+  
   (groups[groupName] || []).forEach((tid, index) => {
     if (!groupSettings[groupName][tid]) {
       groupSettings[groupName][tid] = {
@@ -2067,40 +1984,40 @@ function openGroupDetail(groupName) {
         color: defaultColors[index % defaultColors.length]
       };
     }
-   
+    
     const div = document.createElement("div");
     div.className = "tracker-option";
     div.dataset.trackerId = tid;
-   
+    
     const checkboxContainer = document.createElement("div");
     checkboxContainer.className = "checkbox-container";
-   
+    
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
     checkbox.className = "tracker-checkbox";
     checkbox.checked = groupSettings[groupName][tid].visible;
     checkbox.dataset.trackerId = tid;
-   
+    
     const colorPicker = document.createElement("input");
     colorPicker.type = "color";
     colorPicker.className = "tracker-color-picker";
     colorPicker.value = groupSettings[groupName][tid].color;
     colorPicker.dataset.trackerId = tid;
     colorPicker.style.display = "none";
-   
+    
     const colorPreview = document.createElement("div");
     colorPreview.className = "color-preview";
     colorPreview.style.backgroundColor = groupSettings[groupName][tid].color;
-   
+    
     const trackerIdSpan = document.createElement("span");
     trackerIdSpan.className = "tracker-id-text";
     trackerIdSpan.textContent = tid;
     trackerIdSpan.dataset.trackerId = tid;
-   
+    
     trackerIdSpan.onclick = () => {
       if (window.handleFetch) window.handleFetch(tid);
     };
-   
+    
     checkbox.onchange = (e) => {
       const trackerId = e.target.dataset.trackerId;
       const isVisible = e.target.checked;
@@ -2110,7 +2027,7 @@ function openGroupDetail(groupName) {
         window.updateTrackerVisibilityFromGroup(trackerId, isVisible);
       }
     };
-   
+    
     colorPicker.onchange = (e) => {
       const trackerId = e.target.dataset.trackerId;
       const newColor = e.target.value;
@@ -2121,9 +2038,9 @@ function openGroupDetail(groupName) {
         window.updateTrackerColorFromGroup(trackerId, newColor);
       }
     };
-   
+    
     colorPreview.onclick = () => colorPicker.click();
-   
+    
     checkboxContainer.appendChild(checkbox);
     checkboxContainer.appendChild(colorPreview);
     div.appendChild(checkboxContainer);
@@ -2131,9 +2048,9 @@ function openGroupDetail(groupName) {
     div.appendChild(trackerIdSpan);
     groupTrackerList.appendChild(div);
   });
- 
+  
   saveGroupSettings();
- 
+  
   // Special message for guest group
   if (groupName === 'guest') {
     const infoDiv = document.createElement("div");
@@ -2164,13 +2081,13 @@ document.getElementById("addTrackerToGroupBtn").onclick = () => {
     alert("Select a group first");
     return;
   }
- 
+  
   // Prevent adding to guest group
   if (activeGroup === 'guest') {
     alert('Cannot add trackers to the guest group. It is a pre-configured demo group.');
     return;
   }
- 
+  
   const tracker = document.getElementById("groupTrackerInput").value.trim();
   if (!tracker) return;
   const groups = getGroups();
@@ -2185,13 +2102,13 @@ document.getElementById("addTrackerToGroupBtn").onclick = () => {
 // Add tracker to group (from group detail popup)
 document.getElementById("addTrackerToGroupDetailBtn").onclick = () => {
   if (!activeGroup) return;
- 
+  
   // Prevent adding to guest group
   if (activeGroup === 'guest') {
     alert('Cannot add trackers to the guest group. It is a pre-configured demo group.');
     return;
   }
- 
+  
   const tracker = document.getElementById("groupDetailTrackerInput").value.trim();
   if (!tracker) return;
   const groups = getGroups();
@@ -2222,7 +2139,7 @@ document.getElementById("fetchGroupBtn").onclick = () => {
 
   const groups = getGroups();
   const trackerIds = groups[activeGroup] || [];
- 
+  
   if (trackerIds.length === 0) {
     alert("No trackers in this group");
     return;
@@ -2256,7 +2173,7 @@ document.getElementById("openRealtimePopup").onclick = (e) => {
 function renderRealtimeGroups() {
   realtimeGroupList.innerHTML = "";
   const groups = getGroups();
- 
+  
   if (Object.keys(groups).length === 0) {
     realtimeGroupList.innerHTML = `
       <div style="padding: 20px; text-align: center; color: #6b7280;">
@@ -2265,7 +2182,7 @@ function renderRealtimeGroups() {
     `;
     return;
   }
- 
+  
   // Always show guest group first with special styling
   if (groups['guest']) {
     const guestGroupDiv = document.createElement("div");
@@ -2278,11 +2195,11 @@ function renderRealtimeGroups() {
       <span style="font-size: 11px; color: #6b7280; margin-right: 8px;">(${groups['guest'].length} trackers)</span>
       <i data-lucide="chevron-right" class="group-expand-btn" style="width: 16px; height: 16px;"></i>
     `;
-   
+    
     const guestTrackerList = document.createElement("div");
     guestTrackerList.className = "realtime-tracker-list";
     guestTrackerList.style.display = "none";
-   
+    
     groups['guest'].forEach(trackerId => {
       const trackerDiv = document.createElement("div");
       trackerDiv.className = "realtime-tracker-item";
@@ -2298,7 +2215,7 @@ function renderRealtimeGroups() {
       };
       guestTrackerList.appendChild(trackerDiv);
     });
-   
+    
     const guestChevron = guestGroupDiv.querySelector(".group-expand-btn");
     guestGroupDiv.onclick = () => {
       const isExpanded = guestTrackerList.style.display === "block";
@@ -2306,10 +2223,10 @@ function renderRealtimeGroups() {
       guestChevron.classList.toggle("rotated", !isExpanded);
       lucide.createIcons();
     };
-   
+    
     realtimeGroupList.appendChild(guestGroupDiv);
     realtimeGroupList.appendChild(guestTrackerList);
-   
+    
     // Add separator
     const separator = document.createElement("div");
     separator.style.height = "1px";
@@ -2317,7 +2234,7 @@ function renderRealtimeGroups() {
     separator.style.margin = "8px 0";
     realtimeGroupList.appendChild(separator);
   }
- 
+  
   // Show other user-created groups
   Object.keys(groups).forEach(groupName => {
     if (groupName !== 'guest') {
@@ -2328,11 +2245,11 @@ function renderRealtimeGroups() {
         <span class="realtime-group-name">${groupName}</span>
         <i data-lucide="chevron-right" class="group-expand-btn" style="width: 16px; height: 16px;"></i>
       `;
-     
+      
       const trackerList = document.createElement("div");
       trackerList.className = "realtime-tracker-list";
       trackerList.style.display = "none";
-     
+      
       groups[groupName].forEach(trackerId => {
         const trackerDiv = document.createElement("div");
         trackerDiv.className = "realtime-tracker-item";
@@ -2348,7 +2265,7 @@ function renderRealtimeGroups() {
         };
         trackerList.appendChild(trackerDiv);
       });
-     
+      
       const chevron = groupDiv.querySelector(".group-expand-btn");
       groupDiv.onclick = () => {
         const isExpanded = trackerList.style.display === "block";
@@ -2356,12 +2273,12 @@ function renderRealtimeGroups() {
         chevron.classList.toggle("rotated", !isExpanded);
         lucide.createIcons();
       };
-     
+      
       realtimeGroupList.appendChild(groupDiv);
       realtimeGroupList.appendChild(trackerList);
     }
   });
- 
+  
   lucide.createIcons();
 }
 
@@ -2369,18 +2286,18 @@ function showTrackerParameters(trackerId) {
   selectedTrackerForRealtime = trackerId;
   document.getElementById("selectedTrackerId").textContent = trackerId;
   document.getElementById("trackerParametersSection").style.display = "block";
- 
+  
   const parametersContainer = document.getElementById("parametersCheckboxes");
   parametersContainer.innerHTML = "";
- 
+  
   const settings = getRealtimeSettings();
   const trackerSettings = settings[trackerId] || {};
- 
+  
   availableParameters.forEach(param => {
     const div = document.createElement("div");
     div.className = "parameter-option";
     const checkboxId = `param_${trackerId}_${param.id}`;
-    const isChecked = trackerSettings[param.id] !== undefined ?
+    const isChecked = trackerSettings[param.id] !== undefined ? 
                       trackerSettings[param.id] : param.default;
     div.innerHTML = `
       <input type="checkbox" id="${checkboxId}" ${isChecked ? 'checked' : ''}>
@@ -2497,7 +2414,7 @@ document.addEventListener('click', (e) => {
   const isClickInsidePopup = Array.from(popups).some(popup => popup.contains(e.target));
   const isClickInsideSidebar = sidebar.contains(e.target);
   const isClickOnMobileToggle = mobileMenuToggle.contains(e.target);
- 
+  
   if (!isClickInsidePopup && !isClickInsideSidebar && !isClickOnMobileToggle) {
     closeAllPopups();
   }
@@ -2514,7 +2431,7 @@ document.addEventListener('keydown', (e) => {
       sensorHeader.click();
     }
   }
- 
+  
   // Alt+T for tracker panel
   if (e.altKey && e.key === 't') {
     e.preventDefault();
