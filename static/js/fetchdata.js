@@ -860,6 +860,7 @@
 // });
 
 
+fetchdata.js:--
 window.clearMap = function () {
   if (window.markersLayer) markersLayer.clearLayers();
   if (window.polylineLayer) polylineLayer.clearLayers();
@@ -882,7 +883,6 @@ window.clearMap = function () {
 document.getElementById("sensorTableContainer").style.display = "block";
  
 // --- Updated Sensor History Table Renderer ---
-// --- Updated Sensor History Table Renderer ---
 function updateSensorTable(sensorData = null) {
   const tbody = document.getElementById("sensorDataTableBody");
   const thead = document.getElementById("sensorDataTableHeader");
@@ -896,6 +896,10 @@ function updateSensorTable(sensorData = null) {
  
   tbody.innerHTML = "";
   thead.innerHTML = "";
+ 
+  // Get NAVIC toggle state
+  const navicToggle = document.getElementById('navicToggle');
+  const navicEnabled = navicToggle ? navicToggle.checked : true;
  
   // If no data is provided, use all sensor data
   let rows = [];
@@ -914,9 +918,10 @@ function updateSensorTable(sensorData = null) {
   }
  
   if (rows.length === 0) {
+    const colspan = navicEnabled ? 12 : 9; // Adjust colspan based on NAVIC toggle
     tbody.innerHTML = `
       <tr class="no-data-row">
-        <td colspan="14" style="text-align:center;">No sensor data available. Fetch a sensor first.</td>
+        <td colspan="${colspan}" style="text-align:center;">No sensor data available. Fetch a sensor first.</td>
       </tr>`;
     return;
   }
@@ -928,36 +933,80 @@ function updateSensorTable(sensorData = null) {
     return new Date(dateB) - new Date(dateA);
   });
  
-  // --- Dynamically create table headers from actual data keys ---
-  // First, collect all unique keys from all rows
-  const allKeys = new Set();
-  rows.forEach(row => {
-    Object.keys(row).forEach(key => {
-      allKeys.add(key);
-    });
-  });
- 
-  // Define the order we want columns to appear
-  const columnOrder = [
-    'SensorId', 'Timestamp', 'Latitude', 'Longitude', 'Altitude',
+  // Define column order based on NAVIC toggle
+  const allColumns = [
+    'SensorId', 'Timestamp',
     'Moisture', 'Temperature', 'EC', 'PHValue',
-    'Nitrogen', 'Phosphorous', 'Potassium', 'SatelliteFix', 'Id', 'Maplink'
+    'Nitrogen', 'Phosphorous', 'Potassium',
+    'Latitude', 'Longitude', 'Altitude',
+    'SatelliteFix', 'Maplink'
   ];
  
-  // Sort keys according to our preferred order
-  const headers = columnOrder.filter(key => allKeys.has(key));
+  // Filter columns based on NAVIC toggle
+  const columnOrder = navicEnabled ? allColumns : allColumns.filter(col =>
+    !['Latitude', 'Longitude', 'SatelliteFix'].includes(col)
+  );
  
-  // Add any remaining keys that weren't in our order
-  allKeys.forEach(key => {
-    if (!headers.includes(key)) {
-      headers.push(key);
-    }
+  // Create a mapping of possible key variations to standard column names
+  const keyVariations = {
+    'latitude': 'Latitude',
+    'lat': 'Latitude',
+    'Lat': 'Latitude',
+    'longitude': 'Longitude',
+    'lon': 'Longitude',
+    'Lon': 'Longitude',
+    'long': 'Longitude',
+    'sensorid': 'SensorId',
+    'sensor_id': 'SensorId',
+    'timestamp': 'Timestamp',
+    'time': 'Timestamp',
+    'moisture': 'Moisture',
+    'temperature': 'Temperature',
+    'temp': 'Temperature',
+    'ec': 'EC',
+    'phvalue': 'PHValue',
+    'ph': 'PHValue',
+    'nitrogen': 'Nitrogen',
+    'phosphorous': 'Phosphorous',
+    'phosphorus': 'Phosphorous',
+    'potassium': 'Potassium',
+    'altitude': 'Altitude',
+    'alt': 'Altitude',
+    'satellitefix': 'SatelliteFix',
+    'sat_fix': 'SatelliteFix',
+    'satfix': 'SatelliteFix',
+    'maplink': 'Maplink',
+    'map_link': 'Maplink'
+  };
+ 
+  // First, normalize all row keys to standard format
+  const normalizedRows = rows.map(row => {
+    const normalizedRow = {};
+    Object.keys(row).forEach(key => {
+      const lowerKey = key.toLowerCase();
+      const standardKey = keyVariations[lowerKey] || key;
+      normalizedRow[standardKey] = row[key];
+    });
+    return normalizedRow;
   });
+ 
+  rows = normalizedRows;
+ 
+  // Filter to only include keys that are in our filtered column order AND exist in the data
+  const headers = columnOrder.filter(key => {
+    return rows.some(row => key in row);
+  });
+ 
+  console.log("Headers to display (NAVIC:", navicEnabled, "):", headers);
  
   const trHead = document.createElement("tr");
   headers.forEach(h => {
     const th = document.createElement("th");
     th.textContent = formatSensorHeader(h);
+    // Add coordinate column class for styling if needed
+    if (['Latitude', 'Longitude', 'SatelliteFix'].includes(h)) {
+      th.className = 'navic-column';
+    }
     trHead.appendChild(th);
   });
   thead.appendChild(trHead);
@@ -1001,20 +1050,31 @@ function updateSensorTable(sensorData = null) {
           td.textContent = "-";
         }
       }
-      // Format other numeric values
-      else if (['moisture', 'temperature', 'ec', 'phvalue', 'nitrogen', 'phosphorous', 'potassium'].includes(h.toLowerCase())) {
-        if (value !== undefined && value !== null) {
-          const num = Number(value);
-          td.textContent = !isNaN(num) ? num.toFixed(2) : value;
-        } else {
-          td.textContent = "-";
-        }
+      // Format sensor parameters
+      else if (h.toLowerCase() === "moisture") {
+        td.textContent = value !== undefined && value !== null ? Number(value).toFixed(2) : "-";
       }
-      // ID column - smaller text
-      else if (h.toLowerCase() === "id") {
+      else if (h.toLowerCase() === "temperature") {
+        td.textContent = value !== undefined && value !== null ? Number(value).toFixed(2) : "-";
+      }
+      else if (h.toLowerCase() === "ec") {
+        td.textContent = value !== undefined && value !== null ? Number(value).toFixed(2) : "-";
+      }
+      else if (h.toLowerCase() === "phvalue") {
+        td.textContent = value !== undefined && value !== null ? Number(value).toFixed(2) : "-";
+      }
+      else if (h.toLowerCase() === "nitrogen") {
+        td.textContent = value !== undefined && value !== null ? Number(value).toFixed(2) : "-";
+      }
+      else if (h.toLowerCase() === "phosphorous") {
+        td.textContent = value !== undefined && value !== null ? Number(value).toFixed(2) : "-";
+      }
+      else if (h.toLowerCase() === "potassium") {
+        td.textContent = value !== undefined && value !== null ? Number(value).toFixed(2) : "-";
+      }
+      // Satellite Fix
+      else if (h.toLowerCase() === "satellitefix") {
         td.textContent = value || "-";
-        td.style.fontSize = "12px";
-        td.style.color = "#9ca3af";
       }
       else {
         td.textContent = value !== undefined && value !== null ? value : "-";
@@ -1046,9 +1106,6 @@ function formatSensorHeader(header) {
   const map = {
     'SensorId': 'Sensor ID',
     'Timestamp': 'Timestamp',
-    'Latitude': 'Latitude',
-    'Longitude': 'Longitude',
-    'Altitude': 'Altitude',
     'Moisture': 'Moisture',
     'Temperature': 'Temperature',
     'EC': 'EC',
@@ -1056,8 +1113,10 @@ function formatSensorHeader(header) {
     'Nitrogen': 'Nitrogen',
     'Phosphorous': 'Phosphorous',
     'Potassium': 'Potassium',
+    'Latitude': 'Latitude',
+    'Longitude': 'Longitude',
+    'Altitude': 'Altitude',
     'SatelliteFix': 'Sat Fix',
-    'Id': 'ID',
     'Maplink': 'Map Link'
   };
   return map[header] || header;
@@ -1083,6 +1142,7 @@ function getSensorColor(sensorId) {
  
   return window.sensorColorMap[sensorId];
 }
+ 
 // --- Helper for timestamp formatting ---
 function formatDate(ts) {
   if (!ts) return "-";
@@ -2116,3 +2176,4 @@ document.addEventListener('DOMContentLoaded', function () {
     stopRealtimeUpdates();
   });
 });
+ 
