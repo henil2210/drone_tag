@@ -859,8 +859,6 @@
 //     stopRealtimeUpdates();
 // });
 
-
-fetchdata.js:--
 window.clearMap = function () {
   if (window.markersLayer) markersLayer.clearLayers();
   if (window.polylineLayer) polylineLayer.clearLayers();
